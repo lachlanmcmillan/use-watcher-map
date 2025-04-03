@@ -1,54 +1,27 @@
-# React + TypeScript + Vite
+# WatcherMap
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Fine-grained state updates in React without signals. WatcherMap uses path subscriptions to ensure components re-render only when relevant data changes.
 
-Currently, two official plugins are available:
+## Examples
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This repository contains a simple example application (`example/`) demonstrating the usage of WatcherMap. You can switch between different scenarios using the tabs:
 
-## Expanding the ESLint configuration
+-   **Simple**: Basic usage demonstration.
+-   **SubPath**: Demonstrates watching specific sub-paths within the state.
+-   **SubPath Arrays**: Shows how to handle arrays within watched sub-paths.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Running the Example
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+1.  Navigate to the `example` directory:
+    ```bash
+    cd example
+    ```
+2.  Install dependencies:
+    ```bash
+    bun install
+    ```
+3.  Run the example
+    ```bash
+    bun dev
+    ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
