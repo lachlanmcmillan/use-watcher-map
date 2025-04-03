@@ -1,7 +1,7 @@
-import classes from "./simpleExample.module.css";
-import { useWatcherMap, WatcherMapReturn } from "../hooks/useWatcherMap";
-import { RerenderIndicator } from "../components/RerenderIndicator/RerenderIndicator";
-import { DisplayRow } from "../components/DisplayRow/DisplayRow";
+import classes from "./simple.module.css";
+import { useWatcherMap, WatcherMapReturn } from "../../../src/useWatcherMap";
+import { RerenderIndicator } from "../../components/RerenderIndicator/RerenderIndicator";
+import { DisplayRow } from "../../components/DisplayRow/DisplayRow";
 
 /**
  * SimpleExample - Demonstrates basic state watching with useWatcherMap

@@ -26,12 +26,10 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
 }
 
 /**
- * useWatcherMap - extends the useWatcher to enable watching a specific path
- * instead of the entire state.
- *
- * Any component that calls `watch` will re-render when `setValue` is called.
+ * useWatcherOld - This version has better typing, but doesn't handle nested paths
+ * 
  */
-export const useWatcherMap = <T extends Record<string, any>>(
+export const useWatcherOld = <T extends Record<string, any>>(
   defaultValue: T
 ): WatcherMapReturn<T> => {
   const state = useRef(defaultValue);

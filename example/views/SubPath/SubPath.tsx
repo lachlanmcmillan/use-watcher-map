@@ -1,7 +1,10 @@
 import classes from "./subPath.module.css";
-import { useWatcherMap, WatcherMapSubPathsReturn } from "../hooks/useWatcherMapSubPaths";
-import { RerenderIndicator } from "../components/RerenderIndicator/RerenderIndicator";
-import { DisplayRow } from "../components/DisplayRow/DisplayRow";
+import {
+  useWatcherMap,
+  WatcherMapReturn,
+} from "../../../src/useWatcherMap";
+import { RerenderIndicator } from "../../components/RerenderIndicator/RerenderIndicator";
+import { DisplayRow } from "../../components/DisplayRow/DisplayRow";
 
 /**
  * SubPathExample - Demonstrates nested object state watching with useWatcherMapSubPaths
@@ -29,17 +32,20 @@ export function SubPathExample() {
   return (
     <div className={classes.exampleContainer}>
       <h2>SubPath Example</h2>
-      
+
       <p className={classes.description}>
         Nested object updates via string paths.
       </p>
-      
+
       <WatchingState watcher={watcher} />
 
       <div className={classes.buttonContainer}>
         <button
           onClick={() =>
-            watcher.setPath("objectOne.counterOne", watcher.getPath("objectOne.counterOne") + 1)
+            watcher.setPath(
+              "objectOne.counterOne",
+              watcher.getPath("objectOne.counterOne") + 1
+            )
           }
         >
           CounterOne++
@@ -47,7 +53,10 @@ export function SubPathExample() {
 
         <button
           onClick={() =>
-            watcher.setPath("objectOne.counterTwo", watcher.getPath("objectOne.counterTwo") + 1)
+            watcher.setPath(
+              "objectOne.counterTwo",
+              watcher.getPath("objectOne.counterTwo") + 1
+            )
           }
         >
           CounterTwo++
@@ -63,7 +72,10 @@ export function SubPathExample() {
 
         <button
           onClick={() =>
-            watcher.setState({ objectOne: { counterOne: 0, counterTwo: 0 }, counterThree: 0 })
+            watcher.setState({
+              objectOne: { counterOne: 0, counterTwo: 0 },
+              counterThree: 0,
+            })
           }
         >
           Reset
@@ -80,17 +92,27 @@ export function SubPathExample() {
   );
 }
 
-const WatchingState = ({ watcher }: { watcher: WatcherMapSubPathsReturn<State> }) => {
+const WatchingState = ({
+  watcher,
+}: {
+  watcher: WatcherMapReturn<State>;
+}) => {
   const state = watcher.useState();
 
   return (
     <RerenderIndicator>
-      <pre className={classes.stateDisplay}>{JSON.stringify(state, null, 2)}</pre>
+      <pre className={classes.stateDisplay}>
+        {JSON.stringify(state, null, 2)}
+      </pre>
     </RerenderIndicator>
   );
 };
 
-const WatchingObjectOne = ({ watcher }: { watcher: WatcherMapSubPathsReturn<State> }) => {
+const WatchingObjectOne = ({
+  watcher,
+}: {
+  watcher: WatcherMapReturn<State>;
+}) => {
   const objectOne = watcher.usePath("objectOne");
   return (
     <RerenderIndicator>
@@ -101,7 +123,11 @@ const WatchingObjectOne = ({ watcher }: { watcher: WatcherMapSubPathsReturn<Stat
   );
 };
 
-const WatchingCounterOne = ({ watcher }: { watcher: WatcherMapSubPathsReturn<State> }) => {
+const WatchingCounterOne = ({
+  watcher,
+}: {
+  watcher: WatcherMapReturn<State>;
+}) => {
   const counterOne = watcher.usePath("objectOne.counterOne");
   return (
     <RerenderIndicator>
@@ -112,7 +138,11 @@ const WatchingCounterOne = ({ watcher }: { watcher: WatcherMapSubPathsReturn<Sta
   );
 };
 
-const WatchingCounterTwo = ({ watcher }: { watcher: WatcherMapSubPathsReturn<State> }) => {
+const WatchingCounterTwo = ({
+  watcher,
+}: {
+  watcher: WatcherMapReturn<State>;
+}) => {
   const counterTwo = watcher.usePath("objectOne.counterTwo");
   return (
     <RerenderIndicator>
@@ -123,35 +153,53 @@ const WatchingCounterTwo = ({ watcher }: { watcher: WatcherMapSubPathsReturn<Sta
   );
 };
 
-const ListeningCounterOne = ({ watcher }: { watcher: WatcherMapSubPathsReturn<State> }) => {
+const ListeningCounterOne = ({
+  watcher,
+}: {
+  watcher: WatcherMapReturn<State>;
+}) => {
   watcher.watchPath("objectOne.counterOne", (value) => {
-    console.log(`Listening Path objectOne.counterOne ${value}`);
+    console.log(`watcher.watchPath("objectOne.counterOne") =>`, value);
   });
   return (
     <RerenderIndicator>
-      <DisplayRow label='watcher.watchPath("objectOne.counterOne", (value) => { ... })'>{null}</DisplayRow>
+      <DisplayRow label='watcher.watchPath("objectOne.counterOne", (value) => { ... })'>
+        {null}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };
 
-const ListeningCounterTwo = ({ watcher }: { watcher: WatcherMapSubPathsReturn<State> }) => {
+const ListeningCounterTwo = ({
+  watcher,
+}: {
+  watcher: WatcherMapReturn<State>;
+}) => {
   watcher.watchPath("objectOne.counterTwo", (value) => {
-    console.log(`Listening Path objectOne.counterTwo ${value}`);
+    console.log(`watcher.watchPath("objectOne.counterTwo") =>`, value);
   });
   return (
     <RerenderIndicator>
-      <DisplayRow label='watcher.watchPath("objectOne.counterTwo", (value) => { ... })'>{null}</DisplayRow>
+      <DisplayRow label='watcher.watchPath("objectOne.counterTwo", (value) => { ... })'>
+        {null}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };
 
-const ListeningState = ({ watcher }: { watcher: WatcherMapSubPathsReturn<State> }) => {
+const ListeningState = ({
+  watcher,
+}: {
+  watcher: WatcherMapReturn<State>;
+}) => {
   watcher.watchState((value) => {
-    console.log(`Listening State ${JSON.stringify(value)}`);
+    console.log(`watcher.watchState() =>`, value);
   });
   return (
     <RerenderIndicator>
-      <DisplayRow label='watcher.watchState((value) => { ... })'>{null}</DisplayRow>
+      <DisplayRow label="watcher.watchState((value) => { ... })">
+        {null}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };

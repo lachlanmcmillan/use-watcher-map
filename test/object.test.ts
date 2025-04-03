@@ -1,4 +1,4 @@
-import { setDeepPathClone, getDeepPath } from "./object";
+import { setDeepPathClone, getDeepPath } from "../src/object";
 import { describe, it, expect } from "bun:test";
 
 describe("setDeepPathCopy", () => {

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { DarkToggle } from "./components/DarkToggle/DarkToggle";
 import { TabBar } from "./components/TabBar/TabBar";
-import { Simple } from "./views/SimpleExample";
-import { SubPathArraysExample } from "./views/SubPathArrays";
-import { SubPathExample } from "./views/SubPath";
+import { Simple } from "./views/Simple/Simple";
+import { SubPathArraysExample } from "./views/SubPathArrays/SubPathArrays";
+import { SubPathExample } from "./views/SubPath/SubPath";
 import classes from "./App.module.css";
 
 const tabs: { label: string; value: string }[] = [

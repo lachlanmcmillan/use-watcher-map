@@ -1,6 +1,4 @@
-@import "./common.module.css";
-
-
+@import "../common.module.css";
 
 .columnContainer {
   display: flex;
@@ -146,8 +144,6 @@
   background-color: rgba(125, 125, 125, 0.3);
 }
 
-
-
 .todoList li input[type="checkbox"] {
   cursor: pointer;
-} 
+}

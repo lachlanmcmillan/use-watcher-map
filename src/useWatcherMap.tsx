@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import { getDeepPath, setDeepPathClone } from "../lib/object";
+import { getDeepPath, setDeepPathClone } from "./object";
 
-export interface WatcherMapSubPathsReturn<T extends Record<string, any>> {
+export interface WatcherMapReturn<T extends Record<string, any>> {
   // get the entire state
   getState: () => T;
   // get a specific path
@@ -31,7 +31,7 @@ export interface WatcherMapSubPathsReturn<T extends Record<string, any>> {
 
 export const useWatcherMap = <T extends Record<string, any>>(
   defaultValue: T
-): WatcherMapSubPathsReturn<T> => {
+): WatcherMapReturn<T> => {
   const state = useRef(defaultValue);
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
 
