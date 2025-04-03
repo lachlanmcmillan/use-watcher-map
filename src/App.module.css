@@ -1,0 +1,159 @@
+.rerenderIndicator {
+  border: 2px solid #646cff;
+  transition: border-color 0.3s ease-out;
+  animation: fade-out-border 1s ease-out forwards;
+}
+
+@keyframes fade-out-border {
+  0% {
+    border-color: #646cff;
+  }
+  100% {
+    border-color: transparent;
+  }
+}
+
+.stateDisplay {
+  text-align: left;
+  background-color: lavender;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 0;
+  color: #333;
+}
+
+.exampleContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: transparent;
+  color: inherit;
+}
+
+.value {
+  font-weight: bold;
+}
+
+.displayRow {
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+/* Todo List Styles */
+.todoList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  background-color: transparent;
+}
+
+.todoList li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid rgba(125, 125, 125, 0.2);
+  position: relative;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  background-color: transparent;
+  color: inherit;
+}
+
+.todoText {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(125, 125, 125, 0.3);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+}
+
+.todoText:focus {
+  outline: none;
+  border-color: #646cff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.todoList li.completed .todoText {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-width: 40%;
+  margin-left: auto;
+  overflow: hidden;
+}
+
+.tag {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-radius: 15px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  color: inherit;
+}
+
+/* Override default button styles in the todo list */
+.todoList button {
+  background: none;
+  padding: 0;
+  margin: 0;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.removeTag {
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  margin-left: 5px;
+  font-size: 1rem;
+  padding: 0 3px;
+}
+
+.removeTag:hover {
+  color: #ff4d4d;
+  opacity: 1;
+}
+
+.addTag {
+  background-color: rgba(125, 125, 125, 0.2);
+  border: none;
+  border-radius: 15px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+}
+
+.addTag:hover {
+  background-color: rgba(125, 125, 125, 0.3);
+}
