@@ -1,26 +1,32 @@
 /* Import modern sans-serif fonts similar to Glide Data Grid */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap");
 
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  
+
   /* Default light theme */
   color-scheme: light;
   color: #1a1a1a;
   background-color: #ffffff;
-  
+
   /* Theme variables */
   --primary-gradient: linear-gradient(90deg, #646cff 0%, #6366f1 100%);
   --hover-gradient: linear-gradient(90deg, #535bf2 0%, #4f46e5 100%);
   --primary-color: #646cff;
   --secondary-color: #535bf2;
-  --heading-font: 'Outfit', 'Inter', sans-serif;
+  --heading-font: "Outfit", "Inter", sans-serif;
   --border-color: rgba(0, 0, 0, 0.08);
   --card-bg: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.05);
-  
+  --state-display-bg: rgba(100, 108, 255, 0.1);
+  --state-display-color: #1a1a1a;
+  --state-display-text-color: #1a1a1a;
+  --todo-item-bg: rgba(100, 108, 255, 0.04);
+  --todo-item-bg-alt: rgba(100, 108, 255, 0.08);
+  --display-row-bg: rgba(100, 108, 255, 0.04);
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -32,7 +38,7 @@
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.9);
   background-color: #0f0f11;
-  
+
   /* Dark theme variables */
   --primary-gradient: linear-gradient(90deg, #747bff 0%, #818cf8 100%);
   --hover-gradient: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
@@ -41,6 +47,12 @@
   --border-color: rgba(255, 255, 255, 0.08);
   --card-bg: #161618;
   --shadow-color: rgba(0, 0, 0, 0.2);
+  --state-display-bg: rgba(230, 230, 250, 0.1);
+  --state-display-color: #e0e0e0;
+  --state-display-text-color: #e0e0e0;
+  --todo-item-bg: rgba(255, 255, 255, 0.02);
+  --todo-item-bg-alt: rgba(255, 255, 255, 0.04);
+  --display-row-bg: rgba(100, 108, 255, 0.04);
 }
 
 a {
@@ -85,7 +97,12 @@ p {
   opacity: 0.9;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--heading-font);
   line-height: 1.1;
   margin-top: 0;
@@ -120,7 +137,6 @@ button {
   font-family: inherit;
   background-color: #fafafa;
   cursor: pointer;
-  transition: all 0.2s ease;
   box-shadow: 0 1px 2px var(--shadow-color);
 }
 
@@ -137,31 +153,13 @@ button:hover {
 
 button:focus,
 button:focus-visible {
-  outline: 2px solid var(--secondary-color);
-  outline-offset: 2px;
+  outline: none;
 }
 
-/* Theme toggle button styling */
-.theme-toggle {
-  position: fixed;
-  top: 15px;
-  right: 15px;
-  width: 42px;
-  height: 42px;
-  border-radius: 21px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  cursor: pointer;
-  z-index: 1000;
-  background-color: var(--card-bg);
-  box-shadow: 0 4px 12px var(--shadow-color);
-  border: 1px solid var(--border-color);
-}
+/* Theme toggle styling is now in darkToggle.module.css */
 
 /* Tab navigation styling */
-.tab-navigation {
+.tabNavigation {
   display: flex;
   margin-bottom: 30px;
   width: 100%;
@@ -170,32 +168,32 @@ button:focus-visible {
   gap: 8px;
 }
 
-.tab-button {
+.tabButton {
   padding: 0.7em 1.4em;
   background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-weight: 500;
   position: relative;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   font-family: inherit;
   font-size: 0.95em;
   box-shadow: 0 1px 2px var(--shadow-color);
 }
 
-.tab-button.active {
+.tabButton.active {
   background: var(--primary-gradient);
   color: white;
   border-color: transparent;
   font-weight: 500;
 }
 
-.tab-button:hover {
+.tabButton:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px var(--shadow-color);
 }
 
-.tab-content {
+.tabContent {
   width: 762px;
   max-width: 100%;
   margin: 0 auto;

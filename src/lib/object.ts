@@ -1,5 +1,5 @@
 /**
- * Set a value at a deep path
+ * Set a value at a deep path, cloning any nested object which changes
  * 
  * Given an array of paths, eg. ['loadItems', '0', 'description'],
  * set the value at the end of the path
@@ -7,24 +7,24 @@
  * @example
  * let initial = { 
  *   key1: { 
- *     description: 'apples' 
+ *     fruit: 'apples',
+ *     color: 'red'
  *   },
  *   key2: {
- *     description: 'bananas'
+ *     fruit: 'bananas',
+ *     color: 'yellow'
  *   }
  * }
- * let result = setDeepPathClone(initial, ['key1', 'description'], 'oranges'); 
+ * let result = setDeepPathClone(initial, ['key1', 'fruit'], 'oranges'); 
  * 
- * console.log(result.key1.description) // 'oranges'
- * console.log(initial === result) // false
+ * console.log(result.key1.fruit) // 'oranges'
+ * console.log(result.key1.color) // 'red'
  * console.log(initial.key1 === result.key1) // false
  * console.log(initial.key2 === result.key2) // true
+ * console.log(initial === result) // false
  * 
- * This version of the function will not modify the original object in place.
- * Instead it will return a new object with the value set at the deep path.
  */
 export const setDeepPathClone = (obj: Record<any, any>, paths: string[], value: any) => {
-  // If paths is empty, return the original object
   if (paths.length === 0) {
     return obj;
   }
@@ -72,7 +72,12 @@ function copyObj(obj: any): any {
  * 
  * console.log(result) // 'apples'
  */
-export const getDeepPath = (obj: Record<any, any>, paths: string[]): any => {
+export const getDeepPath = (obj: Record<any, any> | undefined | null, paths: string[]): any => {
+  // Handle undefined or null objects
+  if (obj === undefined || obj === null || paths.length === 0) {
+    return undefined;
+  }
+
   const [first, ...rest] = paths;
   const result = obj[first];
   if (rest.length === 0) {

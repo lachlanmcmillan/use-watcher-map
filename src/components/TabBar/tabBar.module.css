@@ -1,0 +1,31 @@
+.tabNavigation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 8px;
+}
+
+.tabButton {
+  padding: 0.7em 1.4em;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 0.95em;
+  box-shadow: 0 1px 2px var(--shadow-color);
+}
+
+.active {
+  background: var(--primary-gradient);
+  color: white;
+  border-color: transparent;
+  font-weight: 500;
+}
+
+.tabButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--shadow-color);
+}

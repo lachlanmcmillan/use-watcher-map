@@ -1,0 +1,44 @@
+.stateDisplay {
+  text-align: left;
+  background-color: var(--state-display-bg);
+  padding: 10px;
+  border-radius: 8px;
+  margin: 0;
+  color: var(--state-display-text-color);
+}
+
+.exampleContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: transparent;
+  color: inherit;
+}
+
+.description {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  opacity: 0.85;
+  max-width: 700px;
+  margin: 0 0 10px 0;
+}
+
+.value {
+  font-weight: bold;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.buttonContainer button {
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}

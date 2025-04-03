@@ -1,0 +1,6 @@
+@import "./common.module.css";
+
+.buttonContainer {
+  display: flex;
+  gap: 10px;
+} 

@@ -1,0 +1,38 @@
+.rerenderIndicator {
+  border: 2px solid #646cff;
+  transition: border-color 0.3s ease-out;
+  animation: fade-out-border 1s ease-out forwards;
+  position: relative;
+}
+
+@keyframes fade-out-border {
+  0% {
+    border-color: #646cff;
+  }
+  100% {
+    border-color: transparent;
+  }
+}
+
+.renderText {
+  font-size: 0.8rem;
+  color: #646cff;
+  position: absolute;
+  height: 20px;
+  top: -20px;
+  right: 0;
+  background-color: #646cff;
+  color: white;
+  padding: 0 5px;
+  transition: opacity 0.3s ease-in;
+  animation: fade-out-render-text 0.8s ease-in forwards;
+}
+
+@keyframes fade-out-render-text {
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+  }
+}

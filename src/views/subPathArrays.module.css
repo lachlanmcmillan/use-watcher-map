@@ -1,0 +1,153 @@
+@import "./common.module.css";
+
+
+
+.columnContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: auto;
+  flex: 0 1 auto;
+}
+
+.deleteButton {
+  margin-left: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.deleteButton:hover {
+  opacity: 1;
+}
+
+.watchingContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.todoList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  background-color: transparent;
+}
+
+.todoList li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  position: relative;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--todo-item-bg);
+  color: inherit;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.todoList li:nth-child(even) {
+  background-color: var(--todo-item-bg-alt);
+}
+
+.todoText {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  border-bottom: 1px solid rgba(125, 125, 125, 0.3);
+  font-size: 0.9rem;
+  background-color: transparent;
+  transition: border-color 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+  margin-right: 8px;
+}
+
+.todoText:focus {
+  outline: none;
+  border-bottom-color: #646cff;
+  background-color: transparent;
+}
+
+.todoList li.completed .todoText {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tag {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-radius: 15px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  color: inherit;
+}
+
+.removeTag {
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  margin-left: 5px;
+  font-size: 1rem;
+  padding: 0 3px;
+}
+
+.removeTag:hover {
+  color: #ff4d4d;
+  opacity: 1;
+}
+
+.addTag {
+  background-color: rgba(125, 125, 125, 0.2);
+  border: none;
+  border-radius: 15px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+}
+
+.addTag:hover {
+  background-color: rgba(125, 125, 125, 0.3);
+}
+
+
+
+.todoList li input[type="checkbox"] {
+  cursor: pointer;
+} 

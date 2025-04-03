@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import { getDeepPath, setDeepPathClone } from "./object";
+import { getDeepPath, setDeepPathClone } from "../lib/object";
 
 export interface WatcherMapSubPathsReturn<T extends Record<string, any>> {
   // get the entire state
@@ -24,15 +24,12 @@ export interface WatcherMapSubPathsReturn<T extends Record<string, any>> {
   // watchPath will call the supplied function when the path changes
   // todo infer the function params here
   watchPath: (path: string, fn: (value: any) => void) => void;
+  // internal fns, do not call directly, exported for testing
+  __addSubscriber__: (fn: Function, path?: string) => void;
+  __removeSubscriber__: (fn: Function) => void;
 }
 
-/**
- * useWatcherMap - extends the useWatcher to enable watching a specific path
- * instead of the entire state.
- *
- * Any component that calls `watch` will re-render when `setValue` is called.
- */
-export const useWatcherMapSubPaths = <T extends Record<string, any>>(
+export const useWatcherMap = <T extends Record<string, any>>(
   defaultValue: T
 ): WatcherMapSubPathsReturn<T> => {
   const state = useRef(defaultValue);
@@ -52,15 +49,39 @@ export const useWatcherMapSubPaths = <T extends Record<string, any>>(
 
   const notifySubscribers = (value: T, paths: string[]) => {
     subscribers.current.forEach((subscriber) => {
-      // if the subscriber is watching a specific path, and that path
-      // is in the paths array, then notify the subscriber
+      // If the subscriber is watching a specific path
       if (subscriber.path) {
-        if (paths.includes(subscriber.path)) {
-          subscriber.fn(value[subscriber.path]);
+        // Check if the exact path is in the notification paths
+        // Example: watching "filter" and "filter" is updated
+        const exactPathMatch = paths.includes(subscriber.path);
+        
+        // Check if any updated path is a parent of the subscribed path
+        // Example: watching "todos.0.completed" and "todos.0" is replaced
+        // with a new object. In this case, "todos.0" is a parent of 
+        // "todos.0.completed"
+        const parentPathMatch = paths.some(path => {
+          return subscriber.path!.startsWith(path + '.') || subscriber.path === path;
+        });
+        
+        // Check if any updated path is a child of the subscribed path
+        // Example: watching "todos" and "todos.0.completed" is updated
+        // In this case, "todos.0.completed" is a child of "todos"
+        const childPathMatch = paths.some(path => {
+          return path.startsWith(subscriber.path! + '.') || path === subscriber.path;
+        });
+        
+        // Notify if there's any relationship between the paths
+        // This ensures bidirectional updates for nested paths:
+        // 1. Exact match: watching "a.b" and "a.b" is updated
+        // 2. Parent updated: watching "a.b.c" and "a.b" is replaced
+        // 3. Child updated: watching "a.b" and "a.b.c" is updated
+        if (exactPathMatch || parentPathMatch || childPathMatch) {
+          const pathValue = getDeepPath(value, subscriber.path.split('.'));
+          subscriber.fn(pathValue);
         }
       } else {
-        // if the subscriber is watching the entire state, then notify the
-        // subscriber
+        // If the subscriber is watching the entire state, then notify the
+        // subscriber with the complete state object
         subscriber.fn(value);
       }
     });
@@ -98,10 +119,10 @@ export const useWatcherMapSubPaths = <T extends Record<string, any>>(
 
   /**
    * setState - OVERRIDES the entire state and notifies subscribers
-   * of the changes
+   * of the changes. This will trigger all paths that are being watched.
    *
    * Warning. if you call setState and update the entire object state,
-   * you can get into an infinite loop. It's better to call setPath, than
+   * you can get into an infinite loop. It's better to call mergePaths, than
    * setState({...getState(), ...value})
    */
   const setState = useCallback((value: T) => {
@@ -144,10 +165,22 @@ export const useWatcherMapSubPaths = <T extends Record<string, any>>(
   /**
    * Update many paths at once (batched), and notify subscribers (once) of each
    * changed key.
+   * 
+   * Note. that nested objects are not recursively merged.
+   * 
+   * eg. 
+   * {
+   *  a: { b: "example" }
+   * };
+   * 
+   * result = mergePaths({ a: { c: "new value" } });
+   * 
+   * console.log(result)     // { a: { c: "new value" } }
+   * console.log(result.a)   // { c: "new value" }
+   * console.log(result.a.b) // undefined
    */
   const mergePaths = useCallback((newValues: Partial<T>) => {
     state.current = { ...state.current, ...newValues };
-    // @todo
     const paths = Object.keys(newValues);
     notifySubscribers(state.current, paths);
   }, []);
@@ -161,7 +194,7 @@ export const useWatcherMapSubPaths = <T extends Record<string, any>>(
     notifySubscribers(state.current, [path]);
   }, []);
 
-  // do not call any setState from within this function or it will cause
+  // do not call setState from within this function or it will cause
   // an infinite loop
   const watchState = useCallback(
     (fn: Function) =>
@@ -192,11 +225,14 @@ export const useWatcherMapSubPaths = <T extends Record<string, any>>(
     clearPath,
     useState: () => useSyncExternalStore<T>(subscribe, getState),
     usePath: (path: string) =>
-      useSyncExternalStore<any>(
+      useSyncExternalStore<string>(
         subscribePathFactory(path),
         getPathFactory(path)
       ),
     watchState,
     watchPath,
+    // internal fns, do not call directly
+    __addSubscriber__: addSubscriber,
+    __removeSubscriber__: removeSubscriber,
   };
 };

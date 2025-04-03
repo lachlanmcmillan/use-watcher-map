@@ -1,8 +1,13 @@
-import { useRef } from "react";
-import "./App.css";
-import classes from "./App.module.css";
-import { useWatcherMap, WatcherMapReturn } from "./useWatcherMap";
-import { RerenderIndicator } from "./RerenderIndicator";
+import classes from "./simpleExample.module.css";
+import { useWatcherMap, WatcherMapReturn } from "../hooks/useWatcherMap";
+import { RerenderIndicator } from "../components/RerenderIndicator/RerenderIndicator";
+import { DisplayRow } from "../components/DisplayRow/DisplayRow";
+
+/**
+ * SimpleExample - Demonstrates basic state watching with useWatcherMap
+ * Shows how to watch and update primitive state values at the root level
+ * Includes examples of watching specific paths and listening for changes
+ */
 
 type State = {
   counterOne: number;
@@ -19,9 +24,13 @@ export function Simple() {
     <div className={classes.exampleContainer}>
       <h2>Simple Example</h2>
 
+      <p className={classes.description}>
+        Root-level state watching and updates.
+      </p>
+
       <WatchingState watcher={watcher} />
 
-      <div style={{ display: "flex", gap: "10px" }}>
+      <div className={classes.buttonContainer}>
         <button
           onClick={() =>
             watcher.setPath("counterOne", watcher.getPath("counterOne") + 1)
@@ -39,9 +48,7 @@ export function Simple() {
         </button>
 
         <button
-          onClick={() =>
-            watcher.setState({ counterOne: 0, counterTwo: 0 })
-          }
+          onClick={() => watcher.setState({ counterOne: 0, counterTwo: 0 })}
         >
           Reset
         </button>
@@ -60,7 +67,9 @@ const WatchingState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
 
   return (
     <RerenderIndicator>
-      <pre className={classes.stateDisplay}>{JSON.stringify(state, null, 2)}</pre>
+      <pre className={classes.stateDisplay}>
+        {JSON.stringify(state, null, 2)}
+      </pre>
     </RerenderIndicator>
   );
 };
@@ -71,10 +80,11 @@ const WatchingCounterOne = ({
   watcher: WatcherMapReturn<State>;
 }) => {
   const counterOne = watcher.usePath("counterOne");
-
   return (
     <RerenderIndicator>
-      <p>Watching Path CounterOne {counterOne}</p>
+      <DisplayRow label="watcher.usePath('counterOne')">
+        {counterOne}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };
@@ -85,10 +95,11 @@ const WatchingCounterTwo = ({
   watcher: WatcherMapReturn<State>;
 }) => {
   const counterTwo = watcher.usePath("counterTwo");
-
   return (
     <RerenderIndicator>
-      <p>Watching Path CounterTwo {counterTwo}</p>
+      <DisplayRow label="watcher.usePath('counterTwo')">
+        {counterTwo}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };
@@ -99,12 +110,13 @@ const ListeningCounterOne = ({
   watcher: WatcherMapReturn<State>;
 }) => {
   watcher.watchPath("counterOne", (value) => {
-    console.log(`Listening Path CounterOne ${value}`);
+    console.log(`watcher.watchpath("counterOne") =>`, value);
   });
-
   return (
     <RerenderIndicator>
-      <p>Listening Path CounterOne</p>
+      <DisplayRow label="watcher.watchPath('counterOne', (value) => { ... })">
+        {null}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };
@@ -115,25 +127,26 @@ const ListeningCounterTwo = ({
   watcher: WatcherMapReturn<State>;
 }) => {
   watcher.watchPath("counterTwo", (value) => {
-    console.log(`Listening Path CounterTwo ${value}`);
+    console.log(`watcher.watchpath("counterTwo") =>`, value);
   });
-
   return (
     <RerenderIndicator>
-      <p>Listening Path CounterTwo</p>
+      <DisplayRow label="watcher.watchPath('counterTwo', (value) => { ... })">
+        {null}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };
 
 const ListeningState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
   watcher.watchState((value) => {
-    console.log(`Listening State ${JSON.stringify(value)}`);
+    console.log(`watcher.watchState((value) => { ... }) =>`, value);
   });
-
   return (
     <RerenderIndicator>
-      <p>Listening State</p>
+      <DisplayRow label="watcher.watchState((value) => { ... })">
+        {null}
+      </DisplayRow>
     </RerenderIndicator>
   );
 };
-

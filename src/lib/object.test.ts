@@ -173,6 +173,23 @@ describe("getDeepPath", () => {
     const obj = { a: 1 };
     expect(getDeepPath(obj, [])).toBeUndefined();
   });
+
+  it("should handle undefined or null objects", () => {
+    expect(getDeepPath(undefined, ["key1", "description"])).toBeUndefined();
+    expect(getDeepPath(null, ["key1", "description"])).toBeUndefined();
+  });
+  
+  it("should handle accessing nested paths on undefined values", () => {
+    const obj = {
+      items: []
+    };
+    
+    // Accessing a property on an undefined array element
+    expect(getDeepPath(obj, ["items", "0", "name"])).toBeUndefined();
+    
+    // Accessing deeply nested properties that don't exist
+    expect(getDeepPath(obj, ["nonexistent", "deeply", "nested", "path"])).toBeUndefined();
+  });
 });
 
         

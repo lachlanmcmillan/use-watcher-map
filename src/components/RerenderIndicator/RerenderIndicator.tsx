@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import classes from "./App.module.css";
+import classes from "./rerenderIndicator.module.css";
 
 /**
  * A component wrapper that forces React to rebuild this part of the tree
@@ -15,6 +15,7 @@ export const RerenderIndicator = ({ children }: { children: React.ReactNode }) =
 
   return (
     <div className={classes.rerenderIndicator} key={renderCount.current}>
+      <div className={classes.renderText}>render</div>
       {children}
     </div>
   );

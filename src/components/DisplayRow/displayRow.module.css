@@ -1,0 +1,37 @@
+.displayRow {
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  text-align: left;
+  background: var(--display-row-bg);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.displayRow span:first-child {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #646cff;
+}
+
+.displayRow span:last-child {
+  font-weight: bold;
+  font-family: monospace;
+  width: 100%;
+  word-break: break-word;
+  font-size: 0.8rem;
+}
+
+.displayRow span[data-is-undefined="true"] {
+  opacity: 0.6;
+  font-style: italic;
+  color: #999;
+}
+
+.displayRow span[data-is-undefined="true"]::after {
+  content: "undefined";
+}
