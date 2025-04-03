@@ -47,44 +47,49 @@ export const useWatcherMap = <T extends Record<string, any>>(
     subscribers.current = subscribers.current.filter((sub) => sub.fn !== fn);
   };
 
+  /**
+   * each path that's being updated should be a full path, not parts
+   *
+   * ✅ - ["todos.0.completed", "todos.0.tags"]
+   * ❌ - ["todos", "todos.0", "todos.0.completed"]
+   */
   const notifySubscribers = (value: T, paths: string[]) => {
-    subscribers.current.forEach((subscriber) => {
+    // each subscriber should only be called once
+    for (const subscriber of subscribers.current) {
       // If the subscriber is watching a specific path
       if (subscriber.path) {
-        // Check if the exact path is in the notification paths
-        // Example: watching "filter" and "filter" is updated
-        const exactPathMatch = paths.includes(subscriber.path);
-        
-        // Check if any updated path is a parent of the subscribed path
-        // Example: watching "todos.0.completed" and "todos.0" is replaced
-        // with a new object. In this case, "todos.0" is a parent of 
-        // "todos.0.completed"
-        const parentPathMatch = paths.some(path => {
-          return subscriber.path!.startsWith(path + '.') || subscriber.path === path;
-        });
-        
-        // Check if any updated path is a child of the subscribed path
-        // Example: watching "todos" and "todos.0.completed" is updated
-        // In this case, "todos.0.completed" is a child of "todos"
-        const childPathMatch = paths.some(path => {
-          return path.startsWith(subscriber.path! + '.') || path === subscriber.path;
-        });
-        
-        // Notify if there's any relationship between the paths
-        // This ensures bidirectional updates for nested paths:
-        // 1. Exact match: watching "a.b" and "a.b" is updated
-        // 2. Parent updated: watching "a.b.c" and "a.b" is replaced
-        // 3. Child updated: watching "a.b" and "a.b.c" is updated
-        if (exactPathMatch || parentPathMatch || childPathMatch) {
-          const pathValue = getDeepPath(value, subscriber.path.split('.'));
-          subscriber.fn(pathValue);
+
+        for (const notifyPath of paths) {
+          // first, check for exact and child matches
+          // eg. notifyPath = "todos.0.tags"
+          // we notify subscribers of "todos.0.tags", "todos.0.tags.0", "todos.0.tags.1"
+          // but not "todos.0.completed"
+          const childPathMatch = subscriber.path.startsWith(notifyPath);
+
+          if (childPathMatch) {
+            const pathValue = getDeepPath(value, subscriber.path.split("."));
+            subscriber.fn(pathValue);
+            // we've notified this subscriber, so we can skip the rest of the paths
+            break;
+          }
+
+          // check for parent matches
+          // eg. notifyPath = "todos.0.tags"
+          // we notify subscribers of "todos.0.tags", "todos.0", "todos"
+          const parentPathMatch = notifyPath.startsWith(subscriber.path);
+
+          if (parentPathMatch) {
+            const pathValue = getDeepPath(value, subscriber.path.split("."));
+            subscriber.fn(pathValue);
+            break;
+          }
         }
       } else {
         // If the subscriber is watching the entire state, then notify the
         // subscriber with the complete state object
         subscriber.fn(value);
       }
-    });
+    }
   };
 
   const subscribe = useCallback((fn: Function) => {
@@ -151,13 +156,7 @@ export const useWatcherMap = <T extends Record<string, any>>(
 
       state.current = newState;
 
-      // notify subscribers of this property of the changes
-      // if setting a deep path, eg. "a.b.c", then we notify subscribers 
-      // of "a", "a.b", and "a.b.c"
-      const notifyPaths = pathParts.map((part, index) =>
-        pathParts.slice(0, index + 1).join(".")
-      );
-      notifySubscribers(state.current, notifyPaths);
+      notifySubscribers(state.current, [path]);
     },
     [subscribers.current]
   );
@@ -165,16 +164,16 @@ export const useWatcherMap = <T extends Record<string, any>>(
   /**
    * Update many paths at once (batched), and notify subscribers (once) of each
    * changed key.
-   * 
+   *
    * Note. that nested objects are not recursively merged.
-   * 
-   * eg. 
+   *
+   * eg.
    * {
    *  a: { b: "example" }
    * };
-   * 
+   *
    * result = mergePaths({ a: { c: "new value" } });
-   * 
+   *
    * console.log(result)     // { a: { c: "new value" } }
    * console.log(result.a)   // { c: "new value" }
    * console.log(result.a.b) // undefined
