@@ -1,5 +1,5 @@
 {
-  "name": "use-watcher",
+  "name": "use-watcher-map",
   "version": "1.0.0",
   "description": "Fine-grained state updates in React without signals. Use-watcher uses path subscriptions to ensure components re-render only when relevant data changes.",
   "type": "module",
@@ -37,7 +37,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lachlanmcmillan/use-watcher.git"
+    "url": "git+https://github.com/lachlanmcmillan/use-watcher-map.git"
   },
   "keywords": [
     "react",
@@ -47,7 +47,7 @@
   "author": "Lachlan McMillan <lachlanmcmillan@users.noreply.github.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lachlanmcmillan/use-watcher/issues"
+    "url": "https://github.com/lachlanmcmillan/use-watcher-map/issues"
   },
-  "homepage": "https://github.com/lachlanmcmillan/use-watcher"
+  "homepage": "https://github.com/lachlanmcmillan/use-watcher-map"
 }

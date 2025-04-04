@@ -1,4 +1,4 @@
-# WatcherMap
+# useWatcherMap
 
 Fine-grained state updates in React without signals. WatcherMap uses path subscriptions to ensure components re-render only when relevant data changes.
 
