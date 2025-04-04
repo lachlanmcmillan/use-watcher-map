@@ -39,6 +39,21 @@ describe("useWatcherMapSubPaths", () => {
       expect(result.current.getPath("todos.1.completed")).toBe(false);
       expect(result.current.getPath("filter")).toBe("all");
     });
+
+    test("get path with numerical keys using string path", () => {
+      const numericalKeyState = {
+        data: {
+          0: { name: "zero" },
+          1: { name: "one" },
+        },
+        123: "hello",
+      };
+      const { result } = renderHook(() => useWatcherMap(numericalKeyState));
+      expect(result.current.getPath("data.0.name")).toBe("zero");
+      expect(result.current.getPath("data.1")).toEqual({ name: "one" });
+      expect(result.current.getPath("data")).toEqual(numericalKeyState.data);
+      expect(result.current.getPath("123")).toBe("hello");
+    });
   });
 
   describe("setState", () => {
