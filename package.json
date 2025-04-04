@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "bun tsc -b",
+    "build": "bun tsc -p tsconfig.build.json",
     "prepublishOnly": "bun run build",
     "build-example": "tsc -b && vite build",
     "compile": "tsc -b",

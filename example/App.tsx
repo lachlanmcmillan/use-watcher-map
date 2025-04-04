@@ -19,7 +19,7 @@ export const App = () => {
     <div>
       <DarkToggle />
 
-      <h1>WatcherMap</h1>
+      <h1>useWatcherMap</h1>
       <p className={classes.appDescription}>
         Fine-grained state updates in React without signals. WatcherMap uses path subscriptions 
         to ensure components re-render only when relevant data changes.

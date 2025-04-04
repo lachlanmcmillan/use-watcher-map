@@ -11,9 +11,10 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "types": ["bun-types", "node"]
+    "types": ["bun-types", "node"],
+    "noEmit": true,
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "example/**/*"],
   "exclude": [
     "node_modules",
     "dist",
