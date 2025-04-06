@@ -1,7 +1,7 @@
-import { setDeepPathClone, getDeepPath } from "../src/object";
+import { setDeepPathClone, getDeepPath, deleteDeepPathClone } from "../src/object";
 import { describe, it, expect } from "bun:test";
 
-describe("setDeepPathCopy", () => {
+describe("setDeepPathClone", () => {
   it("should set a value at a deep path", () => {
     const obj = {
       a: {
@@ -189,6 +189,126 @@ describe("getDeepPath", () => {
     
     // Accessing deeply nested properties that don't exist
     expect(getDeepPath(obj, ["nonexistent", "deeply", "nested", "path"])).toBeUndefined();
+  });
+});
+
+describe("deleteDeepPathClone", () => {
+  it("should demonstrate the example from the function comment", () => {
+    // return the clone
+    let initial = {
+      key1: {
+        fruit: 'apples',
+        color: 'red'
+      },
+      key2: {
+        fruit: 'bananas',
+        color: 'yellow'
+      }
+    }
+    let result = deleteDeepPathClone(initial, ['key1', 'fruit']);
+    
+    expect(result.key1.fruit).toBeUndefined();
+    expect(result.key1.color).toBe('red');
+    // the result is a new object, not a reference to the original and
+    // the nested object is cloned
+    expect(initial.key1 === result.key1).toBe(false);
+    expect(initial === result).toBe(false);
+    expect(initial.key2 === result.key2).toBe(true);
+  });
+
+  it("should delete a property at a specified deep path", () => {
+    const initial = {
+      a: {
+        b: {
+          c: 123,
+          d: 456,
+        },
+        e: 789,
+      },
+      f: 'hello',
+    };
+
+    const result = deleteDeepPathClone(initial, ['a', 'b', 'c']);
+
+    // Verify the property is deleted
+    expect(result.a.b.c).toBeUndefined();
+    // Verify sibling property is untouched
+    expect(result.a.b.d).toBe(456);
+    // Verify other parts of the object are untouched
+    expect(result.a.e).toBe(789);
+    expect(result.f).toBe('hello');
+
+    // Verify immutability
+    expect(initial.a.b.c).toBe(123); // Original object unchanged
+    expect(initial === result).toBe(false); // Root object cloned
+    expect(initial.a === result.a).toBe(false); // Nested path cloned
+    expect(initial.a.b === result.a.b).toBe(false); // Nested path cloned
+  });
+
+  it("should handle deleting from arrays", () => {
+    const initial = {
+      items: [
+        { id: '101', name: "item1" },
+        { id: '102', name: "item2", details: { value: 'v2' } },
+        { id: '103', name: "item3" },
+      ]
+    };
+
+    // Note the '1' is the index of the item in the array, not the id
+    const result = deleteDeepPathClone(initial, ['items', '1', 'details']);
+
+    expect(result.items[1].details).toBeUndefined();
+    expect(result.items[1].id).toBe('102'); // Other properties of the item remain
+    expect(result.items.length).toBe(3); // Array length unchanged
+
+    // Immutability checks
+    expect(initial.items[1].details).toEqual({ value: 'v2' }); // Original unchanged
+    expect(initial.items === result.items).toBe(false); 
+    expect(initial.items[0] === result.items[0]).toBe(true); // Unchanged item reference remains the same
+    expect(initial.items[1] === result.items[1]).toBe(false); // Changed item cloned
+    expect(initial.items[2] === result.items[2]).toBe(true); // Unchanged item reference remains the same
+  });
+
+  it("should handle deleting a non-existent path gracefully", () => {
+    const initial = { a: { b: 1 } };
+    const result = deleteDeepPathClone(initial, ['a', 'c']);
+
+    expect(result).toEqual({ a: { b: 1 } });
+    expect(result.a.c).toBeUndefined();
+
+    // Immutability checks - path was NOT cloned because we didn't modify it
+    expect(initial === result).toBe(true);
+    expect(initial.a === result.a).toBe(true);
+  });
+
+  it("should handle deleting a non-existent path on a primitive value gracefully", () => {
+    const initial = { a: { b: 1 } };
+    const result = deleteDeepPathClone(initial, ['a', 'b', 'c']);
+
+    expect(result).toEqual({ a: { b: 1 } });
+    expect(result.a.b.c).toBeUndefined();
+
+    // Immutability checks - path was NOT cloned because we didn't modify it
+    expect(initial === result).toBe(true);
+    expect(initial.a === result.a).toBe(true);
+  });
+
+  it("should return the original object if path is empty", () => {
+    const initial = { a: 1 };
+    const result = deleteDeepPathClone(initial, []);
+    expect(result === initial).toBe(true);
+  });
+  
+  it("should handle deleting the last property of an object", () => {
+    const initial = { a: { b: 1 } };
+    const result = deleteDeepPathClone(initial, ['a', 'b']);
+    
+    expect(result.a).toEqual({});
+    expect(result.a.b).toBeUndefined();
+    
+    // Immutability
+    expect(initial.a.b).toBe(1);
+    expect(initial.a === result.a).toBe(false);
   });
 });
 

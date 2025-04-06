@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import { getDeepPath, setDeepPathClone } from "./object";
+import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from "./object";
 
 export interface WatcherMapReturn<T extends Record<string, any>> {
   // get the entire state
@@ -11,7 +11,7 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
   // update a specific path
   setPath: (path: string, value: any) => void;
   // clear a specific path
-  clearPath: (path: Extract<keyof T, string>) => void;
+  clearPath: (path: string) => void;
   // update many paths at once (batched)
   mergePaths: (newValues: Partial<T>) => void;
   // useState will re-render the component when the state changes
@@ -50,7 +50,7 @@ export const useWatcherMap = <T extends Record<string, any>>(
   /**
    * each path that's being updated should be a full path, not parts
    *
-   * ✅ - ["todos.0.completed", "todos.0.tags"]
+   * ✅ - ["todos.0.completed"]
    * ❌ - ["todos", "todos.0", "todos.0.completed"]
    */
   const notifySubscribers = (value: T, paths: string[]) => {
@@ -184,12 +184,14 @@ export const useWatcherMap = <T extends Record<string, any>>(
     notifySubscribers(state.current, paths);
   }, []);
 
-  const clearPath = useCallback((path: Extract<keyof T, string>) => {
+  const clearPath = useCallback((path: string) => {
     if (typeof state.current === "undefined" || state.current === null) {
       return;
     }
 
-    delete (state.current as Record<string, any>)[path];
+    const pathParts = path.split(".");
+    state.current = deleteDeepPathClone(state.current, pathParts);
+
     notifySubscribers(state.current, [path]);
   }, []);
 

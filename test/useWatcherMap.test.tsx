@@ -142,15 +142,57 @@ describe("useWatcherMapSubPaths", () => {
   });
 
   describe("clearPath", () => {
-    test("clear a specific path", () => {
+    test("clear a shallow path", () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+      const mockFn2 = mock(() => {});
+
+      // watch the path being cleared
+      result.current.__addSubscriber__(mockFn, "filter");
+      // watch a different path (should not be called)
+      result.current.__addSubscriber__(mockFn2, "nextId");
 
       act(() => {
         result.current.clearPath("filter");
       });
 
       expect(result.current.getPath("filter")).toBeUndefined();
-      expect(result.current.getPath("todos")).toEqual(initialState.todos);
+      // Other parts of state untouched
+      expect(result.current.getPath("todos")).toEqual(initialState.todos); 
+      expect(result.current.getPath("nextId")).toBe(3);
+
+      // check subscribers
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn2).not.toHaveBeenCalled();
+    });
+
+    test("clear a deep path", () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+      const mockFn2 = mock(() => {});
+      const mockFn3 = mock(() => {});
+
+      // watch the path being cleared
+      result.current.__addSubscriber__(mockFn, "todos.0.text");
+      // watch a parent path
+      result.current.__addSubscriber__(mockFn2, "todos.0");
+      // watch a sibling path (should not be called)
+      result.current.__addSubscriber__(mockFn3, "todos.0.completed");
+
+      act(() => {
+        result.current.clearPath("todos.0.text");
+      });
+
+      expect(result.current.getPath("todos.0.text")).toBeUndefined();
+      // Sibling path untouched
+      expect(result.current.getPath("todos.0.completed")).toBe(true);
+      // Other parts of the state untouched
+      expect(result.current.getPath("todos.1")).toEqual(initialState.todos[1]);
+
+      // check subscribers
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn2).toHaveBeenCalledTimes(1);
+      expect(mockFn3).not.toHaveBeenCalled();
     });
   });
 
