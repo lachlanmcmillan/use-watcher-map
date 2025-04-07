@@ -11,7 +11,7 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
   // update a specific path
   setPath: (path: string, value: any) => void;
   // clear a specific path
-  clearPath: (path: string) => void;
+  clearPath: (path: string, removeEmptyObjects?: boolean) => void;
   // update many paths at once (batched)
   mergePaths: (newValues: Partial<T>) => void;
   // useState will re-render the component when the state changes
@@ -184,13 +184,13 @@ export const useWatcherMap = <T extends Record<string, any>>(
     notifySubscribers(state.current, paths);
   }, []);
 
-  const clearPath = useCallback((path: string) => {
+  const clearPath = useCallback((path: string, removeEmptyObjects = false) => {
     if (typeof state.current === "undefined" || state.current === null) {
       return;
     }
 
     const pathParts = path.split(".");
-    state.current = deleteDeepPathClone(state.current, pathParts);
+    state.current = deleteDeepPathClone(state.current, pathParts, removeEmptyObjects);
 
     notifySubscribers(state.current, [path]);
   }, []);

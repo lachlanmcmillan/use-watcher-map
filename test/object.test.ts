@@ -310,6 +310,78 @@ describe("deleteDeepPathClone", () => {
     expect(initial.a.b).toBe(1);
     expect(initial.a === result.a).toBe(false);
   });
+
+  it("should remove nested empty object when removeEmptyObjects is true", () => {
+    const initial = {
+      a: {
+        b: {
+          c: 123, // Only property in b
+        },
+        e: 789,
+      },
+      f: 'hello',
+    };
+
+    const result = deleteDeepPathClone(initial, ['a', 'b', 'c'], true); // removeEmptyObjects = true
+
+    // Verify property c is deleted and object b is also removed
+    expect(result.a.b).toBeUndefined();
+    // Verify sibling property e is untouched
+    expect(result.a.e).toBe(789);
+    expect(result.f).toBe('hello');
+
+    // Verify immutability
+    expect(initial.a.b.c).toBe(123);
+    expect(initial.a.b).toEqual({ c: 123 });
+    expect(initial === result).toBe(false);
+    expect(initial.a === result.a).toBe(false);
+  });
+
+  it("should NOT remove nested empty object when removeEmptyObjects is false (default)", () => {
+    const initial = {
+      a: {
+        b: {
+          c: 123, // Only property in b
+        },
+        e: 789,
+      },
+      f: 'hello',
+    };
+
+    // Test with removeEmptyObjects = false
+    const resultFalse = deleteDeepPathClone(initial, ['a', 'b', 'c'], false);
+    expect(resultFalse.a.b).toEqual({}); // b becomes an empty object
+    expect(resultFalse.a.e).toBe(789);
+    expect(initial.a === resultFalse.a).toBe(false); // Still cloned
+    expect(initial.a.b === resultFalse.a.b).toBe(false); // Still cloned
+
+    // Test with removeEmptyObjects omitted (should default to false)
+    const resultDefault = deleteDeepPathClone(initial, ['a', 'b', 'c']);
+    expect(resultDefault.a.b).toEqual({}); // b becomes an empty object
+    expect(resultDefault.a.e).toBe(789);
+    expect(initial.a === resultDefault.a).toBe(false);
+    expect(initial.a.b === resultDefault.a.b).toBe(false);
+  });
+  
+  it("should not remove non-empty object even if removeEmptyObjects is true", () => {
+     const initial = {
+      a: {
+        b: {
+          c: 123,
+          d: 456 // b has another property
+        },
+        e: 789,
+      },
+      f: 'hello',
+    };
+
+    const result = deleteDeepPathClone(initial, ['a', 'b', 'c'], true);
+
+    expect(result.a.b).toEqual({ d: 456 }); // b is not removed, just c
+    expect(result.a.e).toBe(789);
+    expect(initial.a.b.c).toBe(123);
+    expect(initial.a.b).toEqual({ c: 123, d: 456 });
+  });
 });
 
         

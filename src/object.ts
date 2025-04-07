@@ -125,7 +125,7 @@ export const getDeepPath = (obj: Record<any, any> | undefined | null, paths: str
  * console.log(initial === result) // false
  * console.log(initial.key2 === result.key2) // true
  */
-export const deleteDeepPathClone = (obj: Record<any, any>, paths: string[]): Record<any, any> => {
+export const deleteDeepPathClone = (obj: Record<any, any>, paths: string[], removeEmptyObjects = false): Record<any, any> => {
   if (paths.length === 0) {
     return obj;
   }
@@ -153,7 +153,7 @@ export const deleteDeepPathClone = (obj: Record<any, any>, paths: string[]): Rec
   }
 
   // recursively call delete on the nested object
-  const newNestedValue = deleteDeepPathClone(nestedValue, rest);
+  const newNestedValue = deleteDeepPathClone(nestedValue, rest, removeEmptyObjects);
 
   // if the nested object was not changed, return original
   if (newNestedValue === nestedValue) {
@@ -162,7 +162,11 @@ export const deleteDeepPathClone = (obj: Record<any, any>, paths: string[]): Rec
     // if the nested object *was* changed, clone the current level object
     // to update the reference
     const result = copyObj(obj);
-    result[first] = newNestedValue;
+    if (removeEmptyObjects && Object.keys(newNestedValue).length === 0) {
+      delete result[first];
+    } else {
+      result[first] = newNestedValue;
+    }
     return result;
   }
 };
