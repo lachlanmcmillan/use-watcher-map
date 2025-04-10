@@ -7,5 +7,5 @@ export default defineConfig({
   build: {
     outDir: 'example-build'
   },
-  base: '/use-watcher/'
+  base: '/use-watcher-map/'
 })
