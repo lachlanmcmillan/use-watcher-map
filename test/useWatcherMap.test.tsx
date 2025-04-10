@@ -1,9 +1,8 @@
-import "./setup-tests";
 import { describe, test, expect, mock, beforeEach } from "bun:test";
 import { renderHook, act } from "@testing-library/react";
 import { useWatcherMap } from "../src/useWatcherMap";
 
-describe("useWatcherMapSubPaths", () => {
+describe("useWatcherMap", () => {
   const initialState = {
     todos: [
       {
