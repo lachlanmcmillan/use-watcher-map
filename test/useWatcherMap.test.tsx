@@ -333,6 +333,40 @@ describe("useWatcherMap", () => {
       expect(mockFn).toHaveBeenCalledWith("update-3");
     });
 
+    test("call the subscribers at the end of batch when clearPath is called", () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn1 = mock(() => {});
+      const mockFn2 = mock(() => {});
+      const mockFn3 = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn1, "filter");
+      result.current.__addSubscriber__(mockFn2, "todos.0.text");
+      result.current.__addSubscriber__(mockFn3, "nextId");
+
+      result.current.batch(() => {
+        result.current.clearPath("filter");
+        result.current.clearPath("todos.0.text");
+        result.current.setPath("nextId", 10);
+
+        // not called until the batch fn returns
+        expect(mockFn1).not.toHaveBeenCalled();
+        expect(mockFn2).not.toHaveBeenCalled();
+        expect(mockFn3).not.toHaveBeenCalled();
+      });
+
+      expect(mockFn1).toHaveBeenCalledTimes(1);
+      expect(mockFn1).toHaveBeenCalledWith(undefined);
+      expect(mockFn2).toHaveBeenCalledTimes(1);
+      expect(mockFn2).toHaveBeenCalledWith(undefined);
+      expect(mockFn3).toHaveBeenCalledTimes(1);
+      expect(mockFn3).toHaveBeenCalledWith(10);
+
+      // verify the paths were actually cleared
+      expect(result.current.getPath("filter")).toBeUndefined();
+      expect(result.current.getPath("todos.0.text")).toBeUndefined();
+      expect(result.current.getPath("nextId")).toBe(10);
+    });
+
     test("call the function when the path changes", () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});
