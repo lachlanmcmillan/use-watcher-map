@@ -103,43 +103,6 @@ describe("useWatcherMap", () => {
     });
   });
 
-  describe("mergePaths", () => {
-    test("merge paths", () => {
-      const { result } = renderHook(() => useWatcherMap(initialState));
-
-      act(() => {
-        result.current.mergePaths({
-          filter: "active",
-          nextId: 10,
-        });
-      });
-
-      expect(result.current.getPath("filter")).toBe("active");
-      expect(result.current.getPath("nextId")).toBe(10);
-      expect(result.current.getPath("todos")).toEqual(initialState.todos);
-    });
-
-    test("perform a shallow merge with mergePaths, not recursive", () => {
-      const nestedInitialState = {
-        a: { b: 1, d: 2 },
-        e: 3,
-      };
-      const { result } = renderHook(() =>
-        useWatcherMap<any>(nestedInitialState)
-      );
-
-      act(() => {
-        // Merge a new object for key 'a', replacing the original { b: 1, d: 2 }
-        result.current.mergePaths({ a: { c: 3 } });
-      });
-
-      expect(result.current.getPath("a")).toEqual({ c: 3 });
-      expect(result.current.getPath("a.c")).toBe(3);
-      expect(result.current.getPath("a.b")).toBeUndefined();
-      expect(result.current.getPath("e")).toBe(3);
-    });
-  });
-
   describe("clearPath", () => {
     test("clear a shallow path", () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
@@ -157,7 +120,7 @@ describe("useWatcherMap", () => {
 
       expect(result.current.getPath("filter")).toBeUndefined();
       // Other parts of state untouched
-      expect(result.current.getPath("todos")).toEqual(initialState.todos); 
+      expect(result.current.getPath("todos")).toEqual(initialState.todos);
       expect(result.current.getPath("nextId")).toBe(3);
 
       // check subscribers
@@ -221,14 +184,24 @@ describe("useWatcherMap", () => {
       result.current.setPath("todos.0.completed", false);
 
       expect(mockFn).toHaveBeenCalledTimes(1);
+
+      result.current.setPath("filter", "active");
+
+      expect(mockFn).toHaveBeenCalledTimes(2);
     });
 
-    test("call the subscriber when mergePaths is called", () => {
+    test("call the subscribers at the end of batch", () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
-      const mockFn = mock(() => {});
+      const mockFn = mock(() => { });
 
       result.current.__addSubscriber__(mockFn);
-      result.current.mergePaths({ filter: "completed", nextId: 10 });
+
+      result.current.batch(() => {
+        result.current.setPath("filter", "completed");
+
+        // not called until the batch fn returns
+        expect(mockFn).not.toHaveBeenCalled();
+      });
 
       expect(mockFn).toHaveBeenCalledTimes(1);
     });
@@ -298,7 +271,7 @@ describe("useWatcherMap", () => {
       result.current.__addSubscriber__(mockFn9, "filter");
       result.current.__addSubscriber__(mockFn10, "nextId");
 
-      const updatedTags = ["tag 1", "tag 2"]; 
+      const updatedTags = ["tag 1", "tag 2"];
       act(() => {
         result.current.setPath("todos.0.tags", updatedTags);
       });
@@ -318,17 +291,48 @@ describe("useWatcherMap", () => {
       expect(mockFn10).not.toHaveBeenCalled();
     });
 
-    test("call the subscriber when mergePaths is called", () => {
+    test("call the subscribers batch finishes", () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
-      const mockFn = mock(() => {});
+      const mockFn1 = mock(() => {});
       const mockFn2 = mock(() => {});
 
-      result.current.__addSubscriber__(mockFn, "filter");
+      result.current.__addSubscriber__(mockFn1, "filter");
       result.current.__addSubscriber__(mockFn2, "nextId");
-      result.current.mergePaths({ filter: "completed", nextId: 10 });
+
+      result.current.batch(() => {
+        result.current.setPath("filter", "completed");
+        result.current.setPath("nextId", 10);
+
+        // not called until the batch fn returns
+        expect(mockFn1).not.toHaveBeenCalled();
+        expect(mockFn2).not.toHaveBeenCalled();
+      });
+
+      expect(mockFn1).toHaveBeenCalledTimes(1);
+      expect(mockFn2).toHaveBeenCalledTimes(1);
+    });
+
+    test("call the subscriber ONCE when path updated multiple time in a batch", () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn, "filter");
+
+      result.current.batch(() => {
+        // update this path multiple times
+        result.current.setPath("filter", "update-1");
+        result.current.setPath("filter", "update-2");
+        result.current.setPath("filter", "update-3");
+
+        // not called until the batch fn returns
+        expect(mockFn).not.toHaveBeenCalled();
+      });
 
       expect(mockFn).toHaveBeenCalledTimes(1);
+      // should be the last value
+      expect(mockFn).toHaveBeenCalledWith("update-3");
     });
+
     test("call the function when the path changes", () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});
@@ -339,7 +343,6 @@ describe("useWatcherMap", () => {
       expect(mockFn).toHaveBeenCalledTimes(1);
       expect(mockFn).toHaveBeenCalledWith("completed");
     });
-
 
     test("trigger multiple path watchers when state object is replaced", () => {
       const { result } = renderHook(() => useWatcherMap(initialState));

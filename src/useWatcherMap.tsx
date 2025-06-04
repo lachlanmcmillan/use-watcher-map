@@ -12,8 +12,8 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
   setPath: (path: string, value: any) => void;
   // clear a specific path
   clearPath: (path: string, removeEmptyObjects?: boolean) => void;
-  // update many paths at once (batched)
-  mergePaths: (newValues: Partial<T>) => void;
+  // make multiple updates and call notifiers at the end
+  batch: (fn: () => void) => void;
   // useState will re-render the component when the state changes
   useState: () => T;
   // usePath will re-render the component when the path changes
@@ -34,6 +34,7 @@ export const useWatcherMap = <T extends Record<string, any>>(
 ): WatcherMapReturn<T> => {
   const state = useRef(defaultValue);
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
+  const batchedUpdates = useRef<{ value: T, paths: string[] }[] | null>(null);
 
   // --- helper fns ---
 
@@ -54,6 +55,12 @@ export const useWatcherMap = <T extends Record<string, any>>(
    * ❌ - ["todos", "todos.0", "todos.0.completed"]
    */
   const notifySubscribers = (value: T, paths: string[]) => {
+    // if we're in a batch, delay the notification until the batch is complete
+    if (batchedUpdates.current) {
+      batchedUpdates.current.push({ value, paths});
+      return;
+    }
+
     // each subscriber should only be called once
     for (const subscriber of subscribers.current) {
       // If the subscriber is watching a specific path
@@ -122,6 +129,24 @@ export const useWatcherMap = <T extends Record<string, any>>(
     }, [path]);
   };
 
+  const batch = useCallback((fn: () => void) => {
+    if (batchedUpdates.current) {
+      throw new Error("Cannot batch updates inside a batch");
+    }
+    batchedUpdates.current = [];
+    fn();
+    // make a list of unique updates, take the last one for each path
+    const updates: { value: T, paths: string[] }[] = [];
+    for (let i = batchedUpdates.current.length - 1; i >= 0; i--) {
+      const update = batchedUpdates.current[i];
+      if (!updates.some((u) => u.paths.every((p) => update.paths.includes(p)))) {
+        updates.push(update);
+      }
+    }
+    batchedUpdates.current = null;
+    updates.forEach(({ value, paths }) => notifySubscribers(value, paths));
+  }, []);
+
   /**
    * setState - OVERRIDES the entire state and notifies subscribers
    * of the changes. This will trigger all paths that are being watched.
@@ -161,29 +186,6 @@ export const useWatcherMap = <T extends Record<string, any>>(
     [subscribers.current]
   );
 
-  /**
-   * Update many paths at once (batched), and notify subscribers (once) of each
-   * changed key.
-   *
-   * Note. that nested objects are not recursively merged.
-   *
-   * eg.
-   * {
-   *  a: { b: "example" }
-   * };
-   *
-   * result = mergePaths({ a: { c: "new value" } });
-   *
-   * console.log(result)     // { a: { c: "new value" } }
-   * console.log(result.a)   // { c: "new value" }
-   * console.log(result.a.b) // undefined
-   */
-  const mergePaths = useCallback((newValues: Partial<T>) => {
-    state.current = { ...state.current, ...newValues };
-    const paths = Object.keys(newValues);
-    notifySubscribers(state.current, paths);
-  }, []);
-
   const clearPath = useCallback((path: string, removeEmptyObjects = false) => {
     if (typeof state.current === "undefined" || state.current === null) {
       return;
@@ -218,11 +220,11 @@ export const useWatcherMap = <T extends Record<string, any>>(
   );
 
   return {
+    batch,
     getState,
     getPath,
     setState,
     setPath,
-    mergePaths,
     clearPath,
     useState: () => useSyncExternalStore<T>(subscribe, getState),
     usePath: (path: string) =>
