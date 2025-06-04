@@ -150,10 +150,6 @@ export const useWatcherMap = <T extends Record<string, any>>(
   /**
    * setState - OVERRIDES the entire state and notifies subscribers
    * of the changes. This will trigger all paths that are being watched.
-   *
-   * Warning. if you call setState and update the entire object state,
-   * you can get into an infinite loop. It's better to call mergePaths, than
-   * setState({...getState(), ...value})
    */
   const setState = useCallback((value: T) => {
     // update the state
