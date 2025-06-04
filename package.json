@@ -1,6 +1,6 @@
 {
   "name": "use-watcher-map",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "description": "Control re-renders in React with ease. use-watcher-map uses path subscriptions to ensure components re-render only when relevant data changes.",
   "type": "module",
   "main": "dist/index.js",
