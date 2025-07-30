@@ -1,6 +1,6 @@
 {
   "name": "use-watcher-map",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Control re-renders in React with ease. use-watcher-map uses path subscriptions to ensure components re-render only when relevant data changes.",
   "type": "module",
   "main": "dist/index.js",
@@ -18,7 +18,7 @@
     "compile": "tsc -b",
     "test": "bun test"
   },
-  "dependencies": {
+  "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -32,6 +32,8 @@
     "@vitejs/plugin-react": "^4.3.4",
     "bun-types": "latest",
     "jsdom": "^26.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.8.2",
     "vite": "^6.2.0"
   },
