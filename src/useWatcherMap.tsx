@@ -2,29 +2,30 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from "./object";
 
 export interface WatcherMapReturn<T extends Record<string, any>> {
-  // get the entire state
+  /** get the entire state */
   getState: () => T;
-  // get a specific path
+  /** get a specific path */
   getPath: (path: string) => any;
-  // override the entire state
+  /** override the entire state */
   setState: (data: T) => void;
-  // update a specific path
+  /** update a specific path */
   setPath: (path: string, value: any) => void;
-  // clear a specific path
+  /** clear a specific path */
   clearPath: (path: string, removeEmptyObjects?: boolean) => void;
-  // make multiple updates and call notifiers at the end
+  /** make multiple updates and call notifiers at the end */
   batch: (fn: () => void) => void;
-  // useState will re-render the component when the state changes
+  /** useState will re-render the component when the state changes */
   useState: () => T;
-  // usePath will re-render the component when the path changes
+  /** usePath will re-render the component when the path changes */
   usePath: (path: string) => any;
-  // watchState will call the supplied function when the state changes.
-  // It uses a useEffect underneath to cleanup properly
+  /** 
+   * watchState will call the supplied function when the state changes.
+   * It uses a useEffect underneath to cleanup properly
+   */
   watchState: (fn: (value: T) => void) => void;
-  // watchPath will call the supplied function when the path changes
-  // todo infer the function params here
+  /** watchPath will call the supplied function when the path changes */
   watchPath: (path: string, fn: (value: any) => void) => void;
-  // internal fns, do not call directly, exported for testing
+  // internal fns, do not call directly, exported for testing */
   __addSubscriber__: (fn: Function, path?: string) => void;
   __removeSubscriber__: (fn: Function) => void;
 }
@@ -63,14 +64,16 @@ export const useWatcherMap = <T extends Record<string, any>>(
 
     // each subscriber should only be called once
     for (const subscriber of subscribers.current) {
-      // If the subscriber is watching a specific path
+      // If the subscriber is watching a specific path (as opposed to the 
+      // entire state)
       if (subscriber.path) {
 
         for (const notifyPath of paths) {
           // first, check for exact and child matches
           // eg. notifyPath = "todos.0.tags"
-          // we notify subscribers of "todos.0.tags", "todos.0.tags.0", "todos.0.tags.1"
-          // but not "todos.0.completed"
+          // we notify subscribers of exact matches "todos.0.tags", and 
+          // sub-paths "todos.0.tags.0", "todos.0.tags.1", etc. but not 
+          // siblings "todos.0.completed"
           const childPathMatch = subscriber.path.startsWith(notifyPath);
 
           if (childPathMatch) {
@@ -82,7 +85,8 @@ export const useWatcherMap = <T extends Record<string, any>>(
 
           // check for parent matches
           // eg. notifyPath = "todos.0.tags"
-          // we notify subscribers of "todos.0.tags", "todos.0", "todos"
+          // we notify subscribers of exact matches "todos.0.tags", and parents
+          // "todos.0", "todos"
           const parentPathMatch = notifyPath.startsWith(subscriber.path);
 
           if (parentPathMatch) {

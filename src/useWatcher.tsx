@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
 export interface WatcherReturn<T extends unknown> {
-  // get the entire state
+  /** get the entire state */
   getState: () => T;
-  // override the entire state
+  /** override the entire state */
   setState: (data: T) => void;
-  // useState will re-render the component when the state changes
+  /** useState will re-render the component when the state changes */
   useState: () => T;
-  // watchState will call the supplied function when the state changes.
-  // It uses a useEffect underneath to cleanup properly
+  /** 
+   * watchState will call the supplied function when the state changes.
+   * It uses a useEffect underneath to cleanup properly
+   */
   watchState: (fn: (value: T) => void) => void;
   // internal fns, do not call directly, exported for testing
   __addSubscriber__: (fn: Function, path?: string) => void;

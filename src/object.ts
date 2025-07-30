@@ -3,10 +3,9 @@
  * 
  * Functions for working with deeply nested objects.
  * 
- * These are designed to work React, as React will check for reference equality
- * to determine if the component should re-render.
+ * These are designed to work with React, as React will check for reference 
+ * equality to determine if the component should re-render.
  */
-
 
 /**
  * Set a value at a deep path, cloning any nested object which changes
@@ -15,7 +14,7 @@
  * set the value at the end of the path
  * 
  * @example
- * let initial = { 
+ * const initial = { 
  *   key1: { 
  *     fruit: 'apples',
  *     color: 'red'
@@ -25,16 +24,18 @@
  *     color: 'yellow'
  *   }
  * }
- * let result = setDeepPathClone(initial, ['key1', 'fruit'], 'oranges'); 
- * 
+ * const result = setDeepPathClone(initial, ['key1', 'fruit'], 'oranges'); 
+ * // key1.fruit is changed 
  * console.log(result.key1.fruit) // 'oranges'
+ * // key1.color is unchanged
  * console.log(result.key1.color) // 'red'
  * // the result is a new object, not a reference to the original and
  * // the nested object is cloned
- * console.log(initial.key1 === result.key1) // false
- * console.log(initial.key2 === result.key2) // true
  * console.log(initial === result) // false
- * 
+ * // result.key1 is a new object
+ * console.log(initial.key1 === result.key1) // false
+ * // result.key2 is a reference to the original
+ * console.log(initial.key2 === result.key2) // true
  */
 export const setDeepPathClone = (obj: Record<any, any>, paths: string[], value: any) => {
   if (paths.length === 0) {
@@ -121,8 +122,10 @@ export const getDeepPath = (obj: Record<any, any> | undefined | null, paths: str
  * console.log(result.key1.color) // 'red'
  * // the result is a new object, not a reference to the original and
  * // the nested object is cloned
- * console.log(initial.key1 === result.key1) // false
  * console.log(initial === result) // false
+ * // result.key1 is a new object
+ * console.log(initial.key1 === result.key1) // false
+ * // result.key2 is a reference to the original
  * console.log(initial.key2 === result.key2) // true
  */
 export const deleteDeepPathClone = (obj: Record<any, any>, paths: string[], removeEmptyObjects = false): Record<any, any> => {
