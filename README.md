@@ -2,9 +2,11 @@
 
 Control re-renders in React with ease. use-watcher-map uses path subscriptions to ensure components re-render only when relevant data changes.
 
+[https://lachlanmcmillan.github.io/use-watcher-map/](https://lachlanmcmillan.github.io/use-watcher-map/)
+
 ## Examples
 
-This repository contains a simple example application (`example/`) demonstrating the usage of WatcherMap. You can switch between different scenarios using the tabs:
+This repository contains a simple example application (`example/`) demonstrating the usage of useWatcherMap. You can switch between different scenarios using the tabs:
 
 -   **Simple**: Basic usage demonstration.
 -   **SubPath**: Demonstrates watching specific sub-paths within the state.
@@ -24,4 +26,3 @@ This repository contains a simple example application (`example/`) demonstrating
     ```bash
     bun dev
     ```
-
