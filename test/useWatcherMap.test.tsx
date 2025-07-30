@@ -485,6 +485,29 @@ describe("useWatcherMap", () => {
       // in a way that should trigger based on the logic.
       expect(mockFn).toHaveBeenCalledTimes(0);
     });
+
+    test("call the function when watching a non-existent path that is then set", () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+
+      // Watch a path that doesn't exist in the initial state
+      result.current.__addSubscriber__(mockFn, "settings.theme");
+
+      // Verify the path doesn't exist initially
+      expect(result.current.getPath("settings.theme")).toBeUndefined();
+
+      // Set the non-existent path
+      act(() => {
+        result.current.setPath("settings.theme", "dark");
+      });
+
+      // The watcher should be called with the new value
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenCalledWith("dark");
+      
+      // Verify the path now exists with the correct value
+      expect(result.current.getPath("settings.theme")).toBe("dark");
+    });
   });
 
   test("properly handle undefined paths after removing all array items", () => {
