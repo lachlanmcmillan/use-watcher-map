@@ -1,21 +1,21 @@
-import { describe, test, expect, mock, beforeEach } from "bun:test";
-import { renderHook, act } from "@testing-library/react";
-import { useWatcher } from "../src/useWatcher";
+import { describe, test, expect, mock, beforeEach } from 'bun:test';
+import { renderHook, act } from '@testing-library/react';
+import { useWatcher } from '../src/useWatcher';
 
-describe("useWatcher", () => {
+describe('useWatcher', () => {
   const initialState = 0;
 
   beforeEach(() => {
     mock.restore();
   });
 
-  test("initialize with the default state", () => {
+  test('initialize with the default state', () => {
     const { result } = renderHook(() => useWatcher(initialState));
     expect(result.current.getState()).toEqual(initialState);
   });
 
-  describe("setState", () => {
-    test("update the entire state", () => {
+  describe('setState', () => {
+    test('update the entire state', () => {
       const { result } = renderHook(() => useWatcher(initialState));
       const newState = 5;
 
@@ -32,8 +32,8 @@ describe("useWatcher", () => {
    * in tests is a pain, so we're calling addSubscriber and removeSubscriber
    * directly to test how the functionality works.
    */
-  describe("watchState", () => {
-    test("call the subscriber when setState is called", () => {
+  describe('watchState', () => {
+    test('call the subscriber when setState is called', () => {
       const { result } = renderHook(() => useWatcher(initialState));
       const mockFn = mock(() => {});
       const updatedState = 10;
@@ -47,7 +47,7 @@ describe("useWatcher", () => {
       expect(mockFn).toHaveBeenCalledWith(updatedState);
     });
 
-    test("no longer call the function after removing subscriber", () => {
+    test('no longer call the function after removing subscriber', () => {
       const { result } = renderHook(() => useWatcher(initialState));
       const mockFn = mock(() => {});
 

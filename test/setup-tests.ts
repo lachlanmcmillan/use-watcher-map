@@ -1,10 +1,10 @@
-import { beforeAll, afterAll } from "bun:test";
-import { JSDOM } from "jsdom";
+import { beforeAll, afterAll } from 'bun:test';
+import { JSDOM } from 'jsdom';
 
 // Set up a fake DOM environment for testing
 beforeAll(() => {
-  const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
-    url: "http://localhost/",
+  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+    url: 'http://localhost/',
     pretendToBeVisual: true,
   });
 
@@ -25,4 +25,4 @@ afterAll(() => {
   delete global.navigator;
   // @ts-ignore
   delete global.getComputedStyle;
-}); 
+});

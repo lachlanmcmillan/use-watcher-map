@@ -1,8 +1,13 @@
 /* Import modern sans-serif fonts similar to Glide Data Grid */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -16,7 +21,7 @@
   --hover-gradient: linear-gradient(90deg, #535bf2 0%, #4f46e5 100%);
   --primary-color: #646cff;
   --secondary-color: #535bf2;
-  --heading-font: "Outfit", "Inter", sans-serif;
+  --heading-font: 'Outfit', 'Inter', sans-serif;
   --border-color: rgba(0, 0, 0, 0.08);
   --card-bg: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.05);
@@ -34,7 +39,7 @@
 }
 
 /* Dark theme */
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.9);
   background-color: #0f0f11;
@@ -64,7 +69,7 @@ a:hover {
   color: #535bf2;
 }
 
-:root[data-theme="dark"] a:hover {
+:root[data-theme='dark'] a:hover {
   color: #747bff;
 }
 
@@ -83,7 +88,7 @@ body {
   background-size: 150% 150%;
 }
 
-:root[data-theme="dark"] body {
+:root[data-theme='dark'] body {
   background-image: radial-gradient(
     circle at 80% 10%,
     rgba(100, 108, 255, 0.08),
@@ -140,7 +145,7 @@ button {
   box-shadow: 0 1px 2px var(--shadow-color);
 }
 
-:root[data-theme="dark"] button {
+:root[data-theme='dark'] button {
   background-color: #1e1e20;
   color: rgba(255, 255, 255, 0.87);
 }
@@ -175,7 +180,9 @@ button:focus-visible {
   border-radius: 8px;
   font-weight: 500;
   position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   font-family: inherit;
   font-size: 0.95em;
   box-shadow: 0 1px 2px var(--shadow-color);

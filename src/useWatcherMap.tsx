@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from "./object";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 
 export interface WatcherMapReturn<T extends Record<string, any>> {
   /** get the entire state */
@@ -18,7 +18,7 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
   useState: () => T;
   /** usePath will re-render the component when the specified path changes */
   usePath: (path: string) => any;
-  /** 
+  /**
    * watchState will call the supplied function when the state changes.
    * It uses a useEffect underneath to cleanup properly
    */
@@ -35,18 +35,18 @@ export const useWatcherMap = <T extends Record<string, any>>(
 ): WatcherMapReturn<T> => {
   const state = useRef(defaultValue);
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
-  const batchedUpdates = useRef<{ value: T, paths: string[] }[] | null>(null);
+  const batchedUpdates = useRef<{ value: T; paths: string[] }[] | null>(null);
 
   // --- helper fns ---
 
   const addSubscriber = (fn: Function, path?: string) => {
-    if (!subscribers.current.some((sub) => sub.fn === fn)) {
+    if (!subscribers.current.some(sub => sub.fn === fn)) {
       subscribers.current.push({ path, fn });
     }
   };
 
   const removeSubscriber = (fn: Function) => {
-    subscribers.current = subscribers.current.filter((sub) => sub.fn !== fn);
+    subscribers.current = subscribers.current.filter(sub => sub.fn !== fn);
   };
 
   /**
@@ -58,26 +58,25 @@ export const useWatcherMap = <T extends Record<string, any>>(
   const notifySubscribers = (value: T, paths: string[]) => {
     // if we're in a batch, delay the notification until the batch is complete
     if (batchedUpdates.current) {
-      batchedUpdates.current.push({ value, paths});
+      batchedUpdates.current.push({ value, paths });
       return;
     }
 
     // each subscriber should only be called once
     for (const subscriber of subscribers.current) {
-      // If the subscriber is watching a specific path (as opposed to the 
+      // If the subscriber is watching a specific path (as opposed to the
       // entire state)
       if (subscriber.path) {
-
         for (const notifyPath of paths) {
           // first, check for exact and child matches
           // eg. notifyPath = "todos.0.tags"
-          // we notify subscribers of exact matches "todos.0.tags", and 
-          // sub-paths "todos.0.tags.0", "todos.0.tags.1", etc. but not 
+          // we notify subscribers of exact matches "todos.0.tags", and
+          // sub-paths "todos.0.tags.0", "todos.0.tags.1", etc. but not
           // siblings "todos.0.completed"
           const childPathMatch = subscriber.path.startsWith(notifyPath);
 
           if (childPathMatch) {
-            const pathValue = getDeepPath(value, subscriber.path.split("."));
+            const pathValue = getDeepPath(value, subscriber.path.split('.'));
             subscriber.fn(pathValue);
             // we've notified this subscriber, so we can skip the rest of the paths
             break;
@@ -90,7 +89,7 @@ export const useWatcherMap = <T extends Record<string, any>>(
           const parentPathMatch = notifyPath.startsWith(subscriber.path);
 
           if (parentPathMatch) {
-            const pathValue = getDeepPath(value, subscriber.path.split("."));
+            const pathValue = getDeepPath(value, subscriber.path.split('.'));
             subscriber.fn(pathValue);
             break;
           }
@@ -123,27 +122,27 @@ export const useWatcherMap = <T extends Record<string, any>>(
   const getState = useCallback(() => state.current, []);
 
   const getPath = useCallback((path: string): any => {
-    return getDeepPath(state.current, path.split("."));
+    return getDeepPath(state.current, path.split('.'));
   }, []);
 
   // returns a function that always returns the same path, useful for useSyncExternalStore
   const getPathFactory = (path: string) => {
     return useCallback((): any => {
-      return getDeepPath(state.current, path.split("."));
+      return getDeepPath(state.current, path.split('.'));
     }, [path]);
   };
 
   const batch = useCallback((fn: () => void) => {
     if (batchedUpdates.current) {
-      throw new Error("Cannot batch updates inside a batch");
+      throw new Error('Cannot batch updates inside a batch');
     }
     batchedUpdates.current = [];
     fn();
     // make a list of unique updates, take the last one for each path
-    const updates: { value: T, paths: string[] }[] = [];
+    const updates: { value: T; paths: string[] }[] = [];
     for (let i = batchedUpdates.current.length - 1; i >= 0; i--) {
       const update = batchedUpdates.current[i];
-      if (!updates.some((u) => u.paths.every((p) => update.paths.includes(p)))) {
+      if (!updates.some(u => u.paths.every(p => update.paths.includes(p)))) {
         updates.push(update);
       }
     }
@@ -172,11 +171,11 @@ export const useWatcherMap = <T extends Record<string, any>>(
    */
   const setPath = useCallback(
     (path: string, value: any) => {
-      if (typeof state.current === "undefined" || state.current === null) {
+      if (typeof state.current === 'undefined' || state.current === null) {
         state.current = {} as T;
       }
 
-      const pathParts = path.split(".");
+      const pathParts = path.split('.');
       const newState = setDeepPathClone(state.current, pathParts, value);
 
       state.current = newState;
@@ -187,12 +186,16 @@ export const useWatcherMap = <T extends Record<string, any>>(
   );
 
   const clearPath = useCallback((path: string, removeEmptyObjects = false) => {
-    if (typeof state.current === "undefined" || state.current === null) {
+    if (typeof state.current === 'undefined' || state.current === null) {
       return;
     }
 
-    const pathParts = path.split(".");
-    state.current = deleteDeepPathClone(state.current, pathParts, removeEmptyObjects);
+    const pathParts = path.split('.');
+    state.current = deleteDeepPathClone(
+      state.current,
+      pathParts,
+      removeEmptyObjects
+    );
 
     notifySubscribers(state.current, [path]);
   }, []);

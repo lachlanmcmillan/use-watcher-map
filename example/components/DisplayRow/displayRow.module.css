@@ -9,7 +9,9 @@
   border-radius: 8px;
   padding: 12px;
   border: 1px solid var(--border-color);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .displayRow span:first-child {
@@ -26,12 +28,12 @@
   font-size: 0.8rem;
 }
 
-.displayRow span[data-is-undefined="true"] {
+.displayRow span[data-is-undefined='true'] {
   opacity: 0.6;
   font-style: italic;
   color: #999;
 }
 
-.displayRow span[data-is-undefined="true"]::after {
-  content: "undefined";
+.displayRow span[data-is-undefined='true']::after {
+  content: 'undefined';
 }

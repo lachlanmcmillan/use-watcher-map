@@ -1,21 +1,22 @@
 {
-  "name": "use-watcher-map",
-  "version": "2.1.0",
   "description": "Control re-renders in React with ease. use-watcher-map uses path subscriptions to ensure components re-render only when relevant data changes.",
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "name": "use-watcher-map",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "version": "2.1.0",
   "scripts": {
-    "dev": "vite",
-    "build": "bun tsc -p tsconfig.build.json",
-    "prepublishOnly": "bun run build",
     "build-example": "vite build",
-    "preview": "vite preview",
+    "build": "bun tsc -p tsconfig.build.json",
     "compile": "tsc -b",
+    "dev": "vite",
+    "format": "prettier --write .",
+    "prepublishOnly": "bun run build",
+    "preview": "vite preview",
     "test": "bun test"
   },
   "peerDependencies": {
@@ -32,6 +33,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "bun-types": "latest",
     "jsdom": "^26.0.0",
+    "prettier": "^3.6.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.8.2",
@@ -42,8 +44,8 @@
     "url": "git+https://github.com/lachlanmcmillan/use-watcher-map.git"
   },
   "keywords": [
-    "react",
     "hook",
+    "react",
     "state"
   ],
   "author": "Lachlan McMillan <lachlanmcmillan@users.noreply.github.com>",

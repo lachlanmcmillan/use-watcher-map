@@ -1,7 +1,7 @@
-import classes from "./simple.module.css";
-import { useWatcherMap, WatcherMapReturn } from "../../../src/useWatcherMap";
-import { RerenderIndicator } from "../../components/RerenderIndicator/RerenderIndicator";
-import { DisplayRow } from "../../components/DisplayRow/DisplayRow";
+import classes from './simple.module.css';
+import { useWatcherMap, WatcherMapReturn } from '../../../src/useWatcherMap';
+import { RerenderIndicator } from '../../components/RerenderIndicator/RerenderIndicator';
+import { DisplayRow } from '../../components/DisplayRow/DisplayRow';
 
 /**
  * SimpleExample - Demonstrates basic state watching with useWatcherMap
@@ -33,7 +33,7 @@ export function Simple() {
       <div className={classes.buttonContainer}>
         <button
           onClick={() =>
-            watcher.setPath("counterOne", watcher.getPath("counterOne") + 1)
+            watcher.setPath('counterOne', watcher.getPath('counterOne') + 1)
           }
         >
           CounterOne++
@@ -41,7 +41,7 @@ export function Simple() {
 
         <button
           onClick={() =>
-            watcher.setPath("counterTwo", watcher.getPath("counterTwo") + 1)
+            watcher.setPath('counterTwo', watcher.getPath('counterTwo') + 1)
           }
         >
           CounterTwo++
@@ -79,7 +79,7 @@ const WatchingCounterOne = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  const counterOne = watcher.usePath("counterOne");
+  const counterOne = watcher.usePath('counterOne');
   return (
     <RerenderIndicator>
       <DisplayRow label="watcher.usePath('counterOne')">
@@ -94,7 +94,7 @@ const WatchingCounterTwo = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  const counterTwo = watcher.usePath("counterTwo");
+  const counterTwo = watcher.usePath('counterTwo');
   return (
     <RerenderIndicator>
       <DisplayRow label="watcher.usePath('counterTwo')">
@@ -109,7 +109,7 @@ const ListeningCounterOne = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  watcher.watchPath("counterOne", (value) => {
+  watcher.watchPath('counterOne', value => {
     console.log(`watcher.watchpath("counterOne") =>`, value);
   });
   return (
@@ -126,7 +126,7 @@ const ListeningCounterTwo = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  watcher.watchPath("counterTwo", (value) => {
+  watcher.watchPath('counterTwo', value => {
     console.log(`watcher.watchpath("counterTwo") =>`, value);
   });
   return (
@@ -139,7 +139,7 @@ const ListeningCounterTwo = ({
 };
 
 const ListeningState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
-  watcher.watchState((value) => {
+  watcher.watchState(value => {
     console.log(`watcher.watchState((value) => { ... }) =>`, value);
   });
   return (

@@ -8,9 +8,9 @@ Control re-renders in React with ease. use-watcher-map uses path subscriptions t
 
 This repository contains a simple example application (`example/`) demonstrating the usage of useWatcherMap. You can switch between different scenarios using the tabs:
 
--   **Simple**: Basic usage demonstration.
--   **SubPath**: Demonstrates watching specific sub-paths within the state.
--   **SubPath Arrays**: Shows how to handle arrays within watched sub-paths.
+- **Simple**: Basic usage demonstration.
+- **SubPath**: Demonstrates watching specific sub-paths within the state.
+- **SubPath Arrays**: Shows how to handle arrays within watched sub-paths.
 
 ## Running the Example
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
 export interface WatcherReturn<T extends unknown> {
   /** get the entire state */
@@ -7,7 +7,7 @@ export interface WatcherReturn<T extends unknown> {
   setState: (data: T) => void;
   /** useState will re-render the component when the state changes */
   useState: () => T;
-  /** 
+  /**
    * watchState will call the supplied function when the state changes.
    * It uses a useEffect underneath to cleanup properly
    */
@@ -29,13 +29,13 @@ export const useWatcher = <T extends unknown>(
   const subscribers = useRef<{ fn: Function }[]>([]);
 
   const addSubscriber = (fn: Function) => {
-    if (!subscribers.current.some((sub) => sub.fn === fn)) {
+    if (!subscribers.current.some(sub => sub.fn === fn)) {
       subscribers.current.push({ fn });
     }
   };
 
   const removeSubscriber = (fn: Function) => {
-    subscribers.current = subscribers.current.filter((sub) => sub.fn !== fn);
+    subscribers.current = subscribers.current.filter(sub => sub.fn !== fn);
   };
 
   const notifySubscribers = (value: T) => {

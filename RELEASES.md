@@ -1,4 +1,4 @@
-## Releases 
+## Releases
 
 How to release
 

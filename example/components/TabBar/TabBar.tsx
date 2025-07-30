@@ -1,4 +1,4 @@
-import classes from "./tabBar.module.css";
+import classes from './tabBar.module.css';
 
 export const TabBar = ({
   tabs,
@@ -11,10 +11,10 @@ export const TabBar = ({
 }) => {
   return (
     <div className={classes.tabNavigation}>
-      {tabs.map((tab) => (
+      {tabs.map(tab => (
         <button
           key={tab.value}
-          className={`${classes.tabButton} ${tab.value === selectedTab ? classes.active : ""}`}
+          className={`${classes.tabButton} ${tab.value === selectedTab ? classes.active : ''}`}
           onClick={() => onChange(tab.value)}
         >
           {tab.label}

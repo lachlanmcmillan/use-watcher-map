@@ -12,7 +12,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "types": ["bun-types", "node"],
-    "noEmit": true,
+    "noEmit": true
   },
   "include": ["src/**/*", "example/**/*"],
   "exclude": [

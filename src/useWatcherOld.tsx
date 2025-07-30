@@ -22,12 +22,15 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
   watchState: (fn: (value: T) => void) => void;
   // watchPath will call the supplied function when the path changes
   // todo infer the function params here
-  watchPath: <K extends Extract<keyof T, string>>(path: K, fn: (value: T[K]) => void) => void;
+  watchPath: <K extends Extract<keyof T, string>>(
+    path: K,
+    fn: (value: T[K]) => void
+  ) => void;
 }
 
 /**
  * useWatcherOld - This version has better typing, but doesn't handle nested paths
- * 
+ *
  */
 export const useWatcherOld = <T extends Record<string, any>>(
   defaultValue: T
@@ -82,9 +85,12 @@ export const useWatcherOld = <T extends Record<string, any>>(
 
   const getState = useCallback(() => state.current, []);
 
-  const getPath = useCallback(<K extends Extract<keyof T, string>>(path: K): T[K] => {
-    return state.current[path];
-  }, []);
+  const getPath = useCallback(
+    <K extends Extract<keyof T, string>>(path: K): T[K] => {
+      return state.current[path];
+    },
+    []
+  );
 
   // returns a function that always returns the same path, useful for useSyncExternalStore
   const getPathFactory = <K extends Extract<keyof T, string>>(path: K) => {

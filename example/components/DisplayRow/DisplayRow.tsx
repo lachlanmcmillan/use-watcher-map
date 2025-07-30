@@ -1,4 +1,4 @@
-import classes from "./displayRow.module.css";
+import classes from './displayRow.module.css';
 
 export const DisplayRow = ({
   label,

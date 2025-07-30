@@ -1,10 +1,7 @@
-import classes from "./subPathArrays.module.css";
-import {
-  useWatcherMap,
-  WatcherMapReturn,
-} from "../../../src/useWatcherMap";
-import { RerenderIndicator } from "../../components/RerenderIndicator/RerenderIndicator";
-import { DisplayRow } from "../../components/DisplayRow/DisplayRow";
+import classes from './subPathArrays.module.css';
+import { useWatcherMap, WatcherMapReturn } from '../../../src/useWatcherMap';
+import { RerenderIndicator } from '../../components/RerenderIndicator/RerenderIndicator';
+import { DisplayRow } from '../../components/DisplayRow/DisplayRow';
 
 /**
  * SubPathArraysExample - Demonstrates array handling with useWatcherMapSubPaths
@@ -31,46 +28,46 @@ export function SubPathArraysExample() {
     todos: [
       {
         id: 1,
-        text: "Learn React",
+        text: 'Learn React',
         completed: true,
-        tags: ["frontend", "learning"],
+        tags: ['frontend', 'learning'],
       },
       {
         id: 2,
-        text: "Build a project",
+        text: 'Build a project',
         completed: false,
-        tags: ["coding", "project"],
+        tags: ['coding', 'project'],
       },
       {
         id: 3,
-        text: "Deploy to production",
+        text: 'Deploy to production',
         completed: false,
-        tags: ["devops"],
+        tags: ['devops'],
       },
     ],
-    filter: "all",
+    filter: 'all',
     nextId: 4,
   };
 
   const watcher = useWatcherMap<State>({ ...initialState });
 
   const addTodo = () => {
-    const newTodoText = prompt("Enter a new todo:");
+    const newTodoText = prompt('Enter a new todo:');
     if (newTodoText === null) return; // Don't add if cancelled
 
     const newTodo: TodoItem = {
-      id: watcher.getPath("nextId"),
-      text: newTodoText || "New Task",
+      id: watcher.getPath('nextId'),
+      text: newTodoText || 'New Task',
       completed: false,
-      tags: ["new"],
+      tags: ['new'],
     };
 
     // Add new todo to the array
-    const todos = [...watcher.getPath("todos"), newTodo];
-    watcher.setPath("todos", todos);
+    const todos = [...watcher.getPath('todos'), newTodo];
+    watcher.setPath('todos', todos);
 
     // Increment nextId
-    watcher.setPath("nextId", watcher.getPath("nextId") + 1);
+    watcher.setPath('nextId', watcher.getPath('nextId') + 1);
   };
 
   const toggleTodoCompleted = (index: number) => {
@@ -80,10 +77,10 @@ export function SubPathArraysExample() {
   };
 
   const addTag = (todoIndex: number) => {
-    const newTag = prompt("Enter a new tag:");
+    const newTag = prompt('Enter a new tag:');
 
     // If user cancels (returns null) or enters empty string, don't add a tag
-    if (newTag === null || newTag.trim() === "") {
+    if (newTag === null || newTag.trim() === '') {
       return;
     }
 
@@ -110,9 +107,9 @@ export function SubPathArraysExample() {
   };
 
   const deleteTodo = (index: number) => {
-    const todos = watcher.getPath("todos");
+    const todos = watcher.getPath('todos');
     const updatedTodos = todos.filter((_: TodoItem, i: number) => i !== index);
-    watcher.setPath("todos", updatedTodos);
+    watcher.setPath('todos', updatedTodos);
   };
 
   const resetState = () => {
@@ -134,12 +131,12 @@ export function SubPathArraysExample() {
         <button
           onClick={() =>
             watcher.setPath(
-              "filter",
-              watcher.getPath("filter") === "all" ? "active" : "all"
+              'filter',
+              watcher.getPath('filter') === 'all' ? 'active' : 'all'
             )
           }
         >
-          Toggle Filter: {watcher.getPath("filter")}
+          Toggle Filter: {watcher.getPath('filter')}
         </button>
         <button onClick={resetState}>Reset State</button>
       </div>
@@ -174,11 +171,7 @@ export function SubPathArraysExample() {
   );
 }
 
-const WatchingState = ({
-  watcher,
-}: {
-  watcher: WatcherMapReturn<State>;
-}) => {
+const WatchingState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
   const state = watcher.useState();
 
   return (
@@ -205,14 +198,14 @@ const TodoList = ({
   onReplace: (index: number, newText: string) => void;
   onDelete: (index: number) => void;
 }) => {
-  const todos = watcher.usePath("todos");
-  const filter = watcher.usePath("filter");
+  const todos = watcher.usePath('todos');
+  const filter = watcher.usePath('filter');
 
   const filteredTodos =
-    filter === "all"
+    filter === 'all'
       ? todos
       : todos.filter((todo: TodoItem) =>
-          filter === "active" ? !todo.completed : todo.completed
+          filter === 'active' ? !todo.completed : todo.completed
         );
 
   const handleTextChange = (
@@ -230,7 +223,7 @@ const TodoList = ({
     index: number,
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
-    if (event.key === "Enter") {
+    if (event.key === 'Enter') {
       // Remove focus after pressing Enter
       event.currentTarget.blur();
     }
@@ -248,7 +241,7 @@ const TodoList = ({
           return (
             <li
               key={todo.id}
-              className={todo.completed ? classes.completed : ""}
+              className={todo.completed ? classes.completed : ''}
               data-index={originalIndex}
             >
               <input
@@ -260,8 +253,8 @@ const TodoList = ({
                 type="text"
                 className={classes.todoText}
                 value={todo.text}
-                onChange={(e) => handleTextChange(originalIndex, e)}
-                onKeyDown={(e) => handleKeyDown(originalIndex, e)}
+                onChange={e => handleTextChange(originalIndex, e)}
+                onKeyDown={e => handleKeyDown(originalIndex, e)}
                 placeholder="Todo text"
               />
               <div className={`${classes.tags} ${classes.tagsContainer}`}>
@@ -303,12 +296,8 @@ const TodoList = ({
   );
 };
 
-const WatchFirstTodo = ({
-  watcher,
-}: {
-  watcher: WatcherMapReturn<State>;
-}) => {
-  const firstTodo = watcher.usePath("todos.0");
+const WatchFirstTodo = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
+  const firstTodo = watcher.usePath('todos.0');
   return (
     <RerenderIndicator>
       <DisplayRow label='watcher.usePath("todos.0")'>
@@ -323,14 +312,14 @@ const WatchFirstTodoCompleted = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  const firstTodoCompleted = watcher.usePath("todos.0.completed");
+  const firstTodoCompleted = watcher.usePath('todos.0.completed');
   return (
     <RerenderIndicator>
       <DisplayRow label='watcher.usePath("todos.0.completed")'>
-        {typeof firstTodoCompleted === "boolean"
+        {typeof firstTodoCompleted === 'boolean'
           ? firstTodoCompleted
-            ? "true"
-            : "false"
+            ? 'true'
+            : 'false'
           : null}
       </DisplayRow>
     </RerenderIndicator>
@@ -342,7 +331,7 @@ const WatchFirstTodoTags = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  const firstTodoTags = watcher.usePath("todos.0.tags");
+  const firstTodoTags = watcher.usePath('todos.0.tags');
   return (
     <RerenderIndicator>
       <DisplayRow label='watcher.usePath("todos.0.tags")'>
@@ -357,7 +346,7 @@ const WatchFirstTodoFirstTag = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  const value = watcher.usePath("todos.0.tags.0");
+  const value = watcher.usePath('todos.0.tags.0');
   return (
     <RerenderIndicator>
       <DisplayRow label='watcher.usePath("todos.0.tags.0")'>{value}</DisplayRow>
@@ -370,7 +359,7 @@ const WatchSecondTodoText = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  const secondTodoText = watcher.usePath("todos.1.text");
+  const secondTodoText = watcher.usePath('todos.1.text');
   return (
     <RerenderIndicator>
       <DisplayRow label='watcher.usePath("todos.1.text")'>
@@ -385,7 +374,7 @@ const WatchThirdTodoTags = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  const thirdTodoTags = watcher.usePath("todos.2.tags");
+  const thirdTodoTags = watcher.usePath('todos.2.tags');
   return (
     <RerenderIndicator>
       <DisplayRow label='watcher.usePath("todos.2.tags")'>
@@ -400,7 +389,7 @@ const ListenToFirstTodo = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  watcher.watchPath("todos.0", (value) => {
+  watcher.watchPath('todos.0', value => {
     console.log(`watcher.watchpath("todos.0") =>`, value);
   });
   return (
@@ -417,7 +406,7 @@ const ListenToFirstTodoCompleted = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  watcher.watchPath("todos.0.completed", (value) => {
+  watcher.watchPath('todos.0.completed', value => {
     console.log(`watcher.watchpath("todos.0.completed") =>`, value);
   });
   return (
@@ -434,7 +423,7 @@ const ListenToFirstTodoTags = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  watcher.watchPath("todos.0.tags", (value) => {
+  watcher.watchPath('todos.0.tags', value => {
     console.log(`watcher.watchpath("todos.0.tags") =>`, value);
   });
   return (
@@ -451,7 +440,7 @@ const ListenToSecondTodoTags = ({
 }: {
   watcher: WatcherMapReturn<State>;
 }) => {
-  watcher.watchPath("todos.1.tags", (value) => {
+  watcher.watchPath('todos.1.tags', value => {
     console.log(`watcher.watchpath("todos.1.tags") =>`, value);
   });
   return (
