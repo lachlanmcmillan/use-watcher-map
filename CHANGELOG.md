@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.0
+
+- Improve function comments to work with TS language server
+- Change React to a peerDependency
+
 ## 2.0.0
 
 - Remove `mergePaths()`, add `batch()`
