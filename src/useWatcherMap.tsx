@@ -16,7 +16,7 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
   batch: (fn: () => void) => void;
   /** useState will re-render the component when the state changes */
   useState: () => T;
-  /** usePath will re-render the component when the path changes */
+  /** usePath will re-render the component when the specified path changes */
   usePath: (path: string) => any;
   /** 
    * watchState will call the supplied function when the state changes.
