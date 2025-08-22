@@ -1,0 +1,231 @@
+import { useEffect, useSyncExternalStore } from 'react';
+import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
+
+export interface WatcherStore<T extends Record<string, any>> {
+  /** get the entire state */
+  getState: () => T;
+  /** get a specific path */
+  getPath: (path: string) => any;
+  /** override the entire state */
+  setState: (data: T) => void;
+  /** update a specific path */
+  setPath: (path: string, value: any) => void;
+  /** clear a specific path */
+  clearPath: (path: string, removeEmptyObjects?: boolean) => void;
+  /** make multiple updates and call notifiers at the end */
+  batch: (fn: () => void) => void;
+  /** useState will re-render the component when the state changes */
+  useState: () => T;
+  /** usePath will re-render the component when the specified path changes */
+  usePath: (path: string) => any;
+  /**
+   * watchState will call the supplied function when the state changes.
+   * It uses a useEffect underneath to cleanup properly
+   */
+  watchState: (fn: (value: T) => void) => void;
+  /** watchPath will call the supplied function when the path changes */
+  watchPath: (path: string, fn: (value: any) => void) => void;
+  // internal fns, do not call directly, exported for testing */
+  __addSubscriber__: (fn: Function, path?: string) => void;
+  __removeSubscriber__: (fn: Function) => void;
+}
+
+/**
+ * watcherStore - A store that allows you to watch for changes to the state
+ */
+export const watcherStore = <T extends Record<string, any>>(
+  defaultValue: T
+): WatcherStore<T> => {
+  let state = defaultValue;
+  let subscribers: { path?: string; fn: Function }[] = [];
+  let batchedUpdates: { value: T; paths: string[] }[] | null = null;
+
+  // --- helper fns ---
+
+  const addSubscriber = (fn: Function, path?: string) => {
+    if (!subscribers.some(sub => sub.fn === fn)) {
+      subscribers.push({ path, fn });
+    }
+  };
+
+  const removeSubscriber = (fn: Function) => {
+    subscribers = subscribers.filter(sub => sub.fn !== fn);
+  };
+
+  /**
+   * each path that's being updated should be a full path, not parts
+   *
+   * ✅ - ["todos.0.completed"]
+   * ❌ - ["todos", "todos.0", "todos.0.completed"]
+   */
+  const notifySubscribers = (value: T, paths: string[]) => {
+    // if we're in a batch, delay the notification until the batch is complete
+    if (batchedUpdates) {
+      batchedUpdates.push({ value, paths });
+      return;
+    }
+
+    // each subscriber should only be called once
+    for (const subscriber of subscribers) {
+      // If the subscriber is watching a specific path (as opposed to the
+      // entire state)
+      if (subscriber.path) {
+        for (const notifyPath of paths) {
+          // first, check for exact and child matches
+          // eg. notifyPath = "todos.0.tags"
+          // we notify subscribers of exact matches "todos.0.tags", and
+          // sub-paths "todos.0.tags.0", "todos.0.tags.1", etc. but not
+          // siblings "todos.0.completed"
+          const childPathMatch = subscriber.path.startsWith(notifyPath);
+
+          if (childPathMatch) {
+            const pathValue = getDeepPath(value, subscriber.path.split('.'));
+            subscriber.fn(pathValue);
+            // we've notified this subscriber, so we can skip the rest of the paths
+            break;
+          }
+
+          // check for parent matches
+          // eg. notifyPath = "todos.0.tags"
+          // we notify subscribers of exact matches "todos.0.tags", and parents
+          // "todos.0", "todos"
+          const parentPathMatch = notifyPath.startsWith(subscriber.path);
+
+          if (parentPathMatch) {
+            const pathValue = getDeepPath(value, subscriber.path.split('.'));
+            subscriber.fn(pathValue);
+            break;
+          }
+        }
+      } else {
+        // If the subscriber is watching the entire state, then notify the
+        // subscriber with the complete state object
+        subscriber.fn(value);
+      }
+    }
+  };
+
+  const subscribe = (fn: Function) => {
+    addSubscriber(fn);
+
+    return () => removeSubscriber(fn);
+  };
+
+  const subscribePathFactory = (path: string) => {
+    return (fn: Function) => {
+      addSubscriber(fn, path);
+
+      return () => removeSubscriber(fn);
+    };
+  };
+
+  const getState = () => state;
+
+  const getPath = (path: string): any => {
+    return getDeepPath(state, path.split('.'));
+  };
+
+  // returns a function that always returns the same path, useful for useSyncExternalStore
+  const getPathFactory = (path: string) => {
+    return (): any => {
+      return getDeepPath(state, path.split('.'));
+    };
+  };
+
+  const batch = (fn: () => void) => {
+    if (batchedUpdates) {
+      throw new Error('Cannot batch updates inside a batch');
+    }
+    batchedUpdates = [];
+    fn();
+    // make a list of unique updates, take the last one for each path
+    const updates: { value: T; paths: string[] }[] = [];
+    for (let i = batchedUpdates.length - 1; i >= 0; i--) {
+      const update = batchedUpdates[i];
+      if (!updates.some(u => u.paths.every(p => update.paths.includes(p)))) {
+        updates.push(update);
+      }
+    }
+    batchedUpdates = null;
+    updates.forEach(({ value, paths }) => notifySubscribers(value, paths));
+  };
+
+  /**
+   * setState - OVERRIDES the entire state and notifies subscribers
+   * of the changes. This will trigger all paths that are being watched.
+   */
+  const setState = (value: T) => {
+    // update the state
+    state = value;
+    // determine what keys have changed in the map
+    // a user can call setValue({ a: 1, b: 2 })
+    // and subscribers of both a and b will be notified
+    const paths = Object.keys(value);
+    // notify subscribers of the changes
+    notifySubscribers(value, paths);
+  };
+
+  /**
+   * setPath - updates a specific path in the state and notifies subscribers
+   * of the changes.
+   */
+  const setPath = (path: string, value: any) => {
+    if (typeof state === 'undefined' || state === null) {
+      state = {} as T;
+    }
+
+    const pathParts = path.split('.');
+    const newState = setDeepPathClone(state, pathParts, value);
+
+    state = newState;
+
+    notifySubscribers(state, [path]);
+  };
+
+  const clearPath = (path: string, removeEmptyObjects = false) => {
+    if (typeof state === 'undefined' || state === null) {
+      return;
+    }
+
+    const pathParts = path.split('.');
+    state = deleteDeepPathClone(state, pathParts, removeEmptyObjects);
+
+    notifySubscribers(state, [path]);
+  };
+
+  // do not call setState from within this function or it will cause
+  // an infinite loop
+  const watchState = (fn: Function) =>
+    useEffect(() => {
+      addSubscriber(fn);
+
+      return () => removeSubscriber(fn);
+    }, []);
+
+  const watchPath = (path: string, fn: (value: any) => void) =>
+    useEffect(() => {
+      addSubscriber(fn, path);
+
+      return () => removeSubscriber(fn);
+    }, [path]);
+
+  return {
+    batch,
+    getState,
+    getPath,
+    setState,
+    setPath,
+    clearPath,
+    useState: () => useSyncExternalStore<T>(subscribe, getState),
+    usePath: (path: string) =>
+      useSyncExternalStore<string>(
+        subscribePathFactory(path),
+        getPathFactory(path)
+      ),
+    watchState,
+    watchPath,
+    // internal fns, do not call directly
+    __addSubscriber__: addSubscriber,
+    __removeSubscriber__: removeSubscriber,
+  };
+};
