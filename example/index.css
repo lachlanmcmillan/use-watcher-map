@@ -208,7 +208,7 @@ button:focus-visible {
   position: relative;
   padding: 25px;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Example containers styling */

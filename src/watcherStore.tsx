@@ -108,7 +108,7 @@ export const watcherStore = <T extends Record<string, any>>(
   const subscribe = (fn: Function) => {
     addSubscriber(fn);
 
-    return () => removeSubscriber(fn);
+  return () => removeSubscriber(fn);
   };
 
   const subscribePathFactory = (path: string) => {

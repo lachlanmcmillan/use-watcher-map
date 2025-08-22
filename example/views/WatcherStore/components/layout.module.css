@@ -1,0 +1,25 @@
+.app {
+  display: flex;
+  height: 600px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: visible;
+  background-color: var(--card-bg);
+  margin: 20px 0;
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app {
+    height: 600px; /* Maintain consistent height on mobile */
+    flex-direction: column;
+  }
+}

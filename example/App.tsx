@@ -5,11 +5,13 @@ import { Simple } from './views/Simple/Simple';
 import { SubPathArraysExample } from './views/SubPathArrays/SubPathArrays';
 import { SubPathExample } from './views/SubPath/SubPath';
 import classes from './App.module.css';
+import { WatcherStoreExample } from './views/WatcherStore/WatcherStore';
 
 const tabs: { label: string; value: string }[] = [
   { label: 'Simple', value: 'simple' },
   { label: 'SubPath', value: 'subpath' },
   { label: 'SubPath Arrays', value: 'subpath-arrays' },
+  { label: 'Watcher Store', value: 'watcher-store' },
 ];
 
 export const App = () => {
@@ -32,6 +34,7 @@ export const App = () => {
         {tab === 'simple' && <Simple />}
         {tab === 'subpath' && <SubPathExample />}
         {tab === 'subpath-arrays' && <SubPathArraysExample />}
+        {tab === 'watcher-store' && <WatcherStoreExample />}
       </div>
     </div>
   );

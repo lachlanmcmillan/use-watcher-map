@@ -1,0 +1,12 @@
+@import '../common.module.css';
+
+/* WatcherStore Example Container */
+.exampleContainer {
+  
+}
+
+.description {
+  margin-bottom: 20px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+}
