@@ -2,18 +2,28 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 
 export interface WatcherStore<T extends Record<string, any>> {
+  /** make multiple updates and call notifiers at the end */
+  batch: (fn: () => void) => void;
+  /** clear a specific path */
+  clearPath: (path: string, removeEmptyObjects?: boolean) => void;
   /** get the entire state */
   getState: () => T;
   /** get a specific path */
   getPath: (path: string) => any;
+  /** 
+   * onMount will call the supplied function when the store is mounted.
+   *
+   * If the function returns a function, that function will be called when the
+   * store is unmounted.
+   * 
+   * Only one onMount function is kept, so calling onMount multiple times will
+   * override the previous function.
+   */
+  onMount: (fn: () => void) => void;
   /** override the entire state */
   setState: (data: T) => void;
   /** update a specific path */
   setPath: (path: string, value: any) => void;
-  /** clear a specific path */
-  clearPath: (path: string, removeEmptyObjects?: boolean) => void;
-  /** make multiple updates and call notifiers at the end */
-  batch: (fn: () => void) => void;
   /** useState will re-render the component when the state changes */
   useState: () => T;
   /** usePath will re-render the component when the specified path changes */
@@ -25,13 +35,6 @@ export interface WatcherStore<T extends Record<string, any>> {
   watchState: (fn: (value: T) => void) => void;
   /** watchPath will call the supplied function when the path changes */
   watchPath: (path: string, fn: (value: any) => void) => void;
-  /** 
-   * onMount will call the supplied function when the store is mounted.
-   *
-   * If the function returns a function, that function will be called when the
-   * store is unmounted.
-   */
-  onMount: (fn: () => void) => void;
   // internal fns, do not call directly, exported for testing */
   __addSubscriber__: (fn: Function, path?: string) => void;
   __removeSubscriber__: (fn: Function) => void;
@@ -235,11 +238,12 @@ export const watcherStore = <T extends Record<string, any>>(
 
   return {
     batch,
-    getState,
-    getPath,
-    setState,
-    setPath,
     clearPath,
+    getPath,
+    getState,
+    onMount,
+    setPath,
+    setState,
     useState: () => useSyncExternalStore<T>(subscribe, getState),
     usePath: (path: string) =>
       useSyncExternalStore<string>(
@@ -251,6 +255,5 @@ export const watcherStore = <T extends Record<string, any>>(
     // internal fns, do not call directly
     __addSubscriber__: addSubscriber,
     __removeSubscriber__: removeSubscriber,
-    onMount,
   };
 };
