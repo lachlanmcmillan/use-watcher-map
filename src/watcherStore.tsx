@@ -25,10 +25,16 @@ export interface WatcherStore<T extends Record<string, any>> {
   watchState: (fn: (value: T) => void) => void;
   /** watchPath will call the supplied function when the path changes */
   watchPath: (path: string, fn: (value: any) => void) => void;
+  /** 
+   * onMount will call the supplied function when the store is mounted.
+   *
+   * If the function returns a function, that function will be called when the
+   * store is unmounted.
+   */
+  onMount: (fn: () => void) => void;
   // internal fns, do not call directly, exported for testing */
   __addSubscriber__: (fn: Function, path?: string) => void;
   __removeSubscriber__: (fn: Function) => void;
-  onMount: (fn: () => void) => void;
 }
 
 /**
