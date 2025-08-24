@@ -28,6 +28,7 @@ export interface WatcherStore<T extends Record<string, any>> {
   // internal fns, do not call directly, exported for testing */
   __addSubscriber__: (fn: Function, path?: string) => void;
   __removeSubscriber__: (fn: Function) => void;
+  onMount: (fn: () => void) => void;
 }
 
 /**
@@ -39,10 +40,19 @@ export const watcherStore = <T extends Record<string, any>>(
   let state = defaultValue;
   let subscribers: { path?: string; fn: Function }[] = [];
   let batchedUpdates: { value: T; paths: string[] }[] | null = null;
+  let onMountFn: (() => void) | null = null;
+  let onUnmountFn: any | null = null;
 
   // --- helper fns ---
 
   const addSubscriber = (fn: Function, path?: string) => {
+    if (subscribers.length === 0 && typeof onMountFn === 'function') {
+      const returnValue = onMountFn();
+      if (typeof returnValue === 'function') {
+        onUnmountFn = returnValue;
+      }
+    }
+
     if (!subscribers.some(sub => sub.fn === fn)) {
       subscribers.push({ path, fn });
     }
@@ -50,6 +60,10 @@ export const watcherStore = <T extends Record<string, any>>(
 
   const removeSubscriber = (fn: Function) => {
     subscribers = subscribers.filter(sub => sub.fn !== fn);
+
+    if (subscribers.length === 0 && typeof onUnmountFn === 'function') {
+      onUnmountFn();
+    }
   };
 
   /**
@@ -209,6 +223,10 @@ export const watcherStore = <T extends Record<string, any>>(
       return () => removeSubscriber(fn);
     }, [path]);
 
+  const onMount = (fn: () => void) => {
+    onMountFn = fn;
+  }
+
   return {
     batch,
     getState,
@@ -227,5 +245,6 @@ export const watcherStore = <T extends Record<string, any>>(
     // internal fns, do not call directly
     __addSubscriber__: addSubscriber,
     __removeSubscriber__: removeSubscriber,
+    onMount,
   };
 };
