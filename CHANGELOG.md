@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## 4.0.0 - path typing
+
+- **NEW**: Add comprehensive TypeScript path support with `PathOf<T>` type
+
+  All path-based methods now have full TypeScript autocomplete and type safety! The new `PathOf<T>` type automatically generates all possible nested property paths as string literals from your state type.
+
+  ```typescript
+  interface UserState {
+    user: {
+      name: string;
+      address: {
+        street: string;
+        city: string;
+      };
+    };
+    settings: {
+      theme: 'light' | 'dark';
+    };
+  }
+
+  const store = useWatcherStore<UserState>({
+    /* ... */
+  });
+
+  // TypeScript autocomplete and validation
+  store.getPath('user.name'); // ✅ Valid
+  store.setPath('user.address.city', 'NYC'); // ✅ Valid
+  store.usePath('settings.theme'); // ✅ Valid
+
+  // TypeScript errors for invalid paths
+  store.getPath('user.age'); // ❌ Error: invalid path
+  store.setPath('user.address.country', 'US'); // ❌ Error: invalid path
+  store.setPath('random', '12345'); // ❌ Error: invalid path
+  ```
+
+- **Export `PathOf<T>` type** for advanced use cases
+
+  ```typescript
+  import { PathOf } from 'use-watcher-map';
+
+  type MyPaths = PathOf<MyStateType>; // Get all valid paths as a union type
+  ```
+
 ## 3.0.0 - watcherStore
 
 - **NEW**: Add `watcherStore` - a standalone store that doesn't require React hooks
