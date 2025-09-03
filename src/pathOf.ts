@@ -3,8 +3,8 @@ type FilteredKeys<T> = keyof T & (string | number);
 // Create a mapped type that generates all possible nested property paths as
 // string literals
 export type PathOf<T extends Record<string, any>> = {
-  [Key in FilteredKeys<T>]: T[Key] extends object
-    ? `${Key}` | `${Key}.${PathOf<T[Key]>}`
+  [Key in FilteredKeys<T>]: NonNullable<T[Key]> extends object
+    ? `${Key}` | `${Key}.${PathOf<NonNullable<T[Key]>>}`
     : `${Key}`;
 }[FilteredKeys<T>];
 
@@ -15,6 +15,7 @@ export type PathOf<T extends Record<string, any>> = {
 interface MyType {
   name: string;
   age?: number;
+  friends: string[]; // array
   address: {
     street: {
       line1: string;
@@ -22,7 +23,16 @@ interface MyType {
     };
     city: 'New York' | 'Los Angeles';
   };
-  friends: string[];
+  // optional object
+  emergencyContact?: {
+    name: string;
+    phone: string; 
+  }
+  // nullable object
+  spouse?: {
+    name: string;
+    age: number;
+  } | null;
   sub: SubType;
 }
 
@@ -39,36 +49,46 @@ const example03: PathOf<MyType> = 'address.street';
 const example04: PathOf<MyType> = 'address.street.line1';
 const example05: PathOf<MyType> = 'address.street.line2';
 const example06: PathOf<MyType> = 'address.city';
-const example07: PathOf<MyType> = 'friends';
-const example08: PathOf<MyType> = 'friends.0'; // array access
-const example09: PathOf<MyType> = 'sub.a.b'; // sub-type-access
+const example07: PathOf<MyType> = 'emergencyContact.name';
+const example08: PathOf<MyType> = 'emergencyContact.phone';
+const example09: PathOf<MyType> = 'spouse.name';
+const example10: PathOf<MyType> = 'spouse.age';
+const example11: PathOf<MyType> = 'friends';
+const example12: PathOf<MyType> = 'friends.0'; // array access
+const example13: PathOf<MyType> = 'sub.a.b'; // sub-type-access
 
 // expected errors
-// const example10: MyTypePath = 'color'; // expected error
-// const example11: MyTypePath = 'address.friends.sam'; // expected error
+// const badExample10: PathOf<MyType> = 'color'; // expected error
+// const badExample11: PathOf<MyType> = 'address.friends.sam'; // expected error
+// const badExample12: PathOf<MyType> = 'emergencyContact.age'; // expected error
 
 // ----------------------------------------------------------------------------
 // EXPLANATION OF THE TYPES
 // ----------------------------------------------------------------------------
 
+// NonNullable is a built in that removes null and undefined from a union type
+type OnlyString = NonNullable<string | null | undefined>;
+let example27: OnlyString = 'example';
+// let badExample27: OnlyString = null; // expected error
+
 // Typescript's template literal types automatically distribute over union types
 type Distributed = `prefix.${'a' | 'b'}`; // evals to "prefix.a" | "prefix.b"
-let example12: Distributed = 'prefix.a';
-let example13: Distributed = 'prefix.b';
+let example14: Distributed = 'prefix.a';
+let example15: Distributed = 'prefix.b';
 // we expect a non-existant literal to fail
-// let example14: Distributed = 'prefix.c'; // expected error
+// let badDxample14: Distributed = 'prefix.c'; // expected error
 
 // all the literals are unioned
 type Distributed2 = 'x' | 'y' | `prefix2.${Distributed}`;
-let example15: Distributed2 = 'x';
-let example16: Distributed2 = 'prefix2.prefix.b';
+let example16: Distributed2 = 'x';
+let example17: Distributed2 = 'prefix2.prefix.b';
 
 // The & creates an *intersection type* that filters the keys:
 // This takes all the keys from T and keeps only the ones that are either string
 // or number types. We need this to filter out symbols because template literal
 // types (like ${Key}) cannot work with symbols
 // this is valid with unfiltered-keys
-let example17: keyof Array<any> = Symbol.iterator;
+let example18: keyof Array<any> = Symbol.iterator;
 // however with filtered keys it should fail
 // let example18: FilteredKeys<Array<any>> = Symbol.iterator; // expected error
 // However string and number are valid
@@ -87,6 +107,8 @@ let exampleM1: PrefixedKeys<MyType, 'my'> = {
   'my.age': 30,
   'my.address': { street: { line1: '123 Main St' }, city: 'New York' },
   'my.friends': ['Jane', 'Jim'],
+  'my.spouse': { name: 'Jane', age: 30 },
+  'my.emergencyContact': { name: 'John', phone: '1234567890' },
   'my.sub': { a: { b: 10 } },
 };
 
