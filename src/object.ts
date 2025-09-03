@@ -10,7 +10,7 @@
 /**
  * Set a value at a deep path, cloning any nested object which changes
  *
- * Given an array of paths, eg. ['loadItems', '0', 'description'],
+ * Given an array of paths, eg. ['items', '0', 'description'],
  * set the value at the end of the path
  *
  * @example
