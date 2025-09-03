@@ -71,7 +71,7 @@ export function SubPathArraysExample() {
   };
 
   const toggleTodoCompleted = (index: number) => {
-    const path = `todos.${index}.completed`;
+    const path = `todos.${index}.completed` as const;
     const currentValue = watcher.getPath(path);
     watcher.setPath(path, !currentValue);
   };
