@@ -34,6 +34,7 @@ interface MyType {
     age: number;
   } | null;
   sub: SubType;
+  record: Record<string, any>;
 }
 
 type SubType = {
@@ -56,6 +57,7 @@ const example10: PathOf<MyType> = 'spouse.age';
 const example11: PathOf<MyType> = 'friends';
 const example12: PathOf<MyType> = 'friends.0'; // array access
 const example13: PathOf<MyType> = 'sub.a.b'; // sub-type-access
+const example84: PathOf<MyType> = 'record.key1'; // record access
 
 // expected errors
 // const badExample10: PathOf<MyType> = 'color'; // expected error
@@ -110,6 +112,7 @@ let exampleM1: PrefixedKeys<MyType, 'my'> = {
   'my.spouse': { name: 'Jane', age: 30 },
   'my.emergencyContact': { name: 'John', phone: '1234567890' },
   'my.sub': { a: { b: 10 } },
+  'my.record': { key1: 'value1' },
 };
 
 // this example mapped type changes the type of each key to boolean
@@ -119,6 +122,7 @@ type BooleanRecord<T> = {
 
 let example21: BooleanRecord<MyType> = {
   name: true,
+  record: false,
   address: false,
   friends: true,
   sub: false,
