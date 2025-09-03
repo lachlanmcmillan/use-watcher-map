@@ -13,7 +13,7 @@ export interface WatcherReturn<T extends unknown> {
    */
   watchState: (fn: (value: T) => void) => void;
   // internal fns, do not call directly, exported for testing
-  __addSubscriber__: (fn: Function, path?: string) => void;
+  __addSubscriber__: (fn: Function) => void;
   __removeSubscriber__: (fn: Function) => void;
 }
 
