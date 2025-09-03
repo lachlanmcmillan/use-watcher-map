@@ -5,7 +5,6 @@
 - **NEW**: Add `watcherStore` - a standalone store that doesn't require React hooks
 
   The new `watcherStore` provides the same functionality as `useWatcherMap` but works outside of React components. This enables:
-  
   - **Global state management**: Create stores that can be shared across your entire application
   - **Non-React usage**: Use the store in vanilla JavaScript, Node.js, or other frameworks
 
@@ -14,7 +13,7 @@
 
   const store = watcherStore({
     user: { name: 'John', age: 30 },
-    settings: { theme: 'dark' }
+    settings: { theme: 'dark' },
   });
 
   // Get state
@@ -24,7 +23,7 @@
   store.setPath('user.age', 31);
 
   // Watch for changes within a React component
-  store.watchPath('user.name', (name) => {
+  store.watchPath('user.name', name => {
     console.log('Name changed:', name);
   });
 
@@ -32,10 +31,8 @@
   const UserName = () => {
     const name = store.usePath('user.name');
 
-    return (
-      <h3>Welcome {name}!</h3>
-    );
-  }
+    return <h3>Welcome {name}!</h3>;
+  };
   ```
 
 - Add `onMount`/`onUnmount` lifecycle management
@@ -45,7 +42,7 @@
   ```javascript
   store.onMount(() => {
     console.log('Store mounted - first subscriber added');
-    
+
     // Return cleanup function (optional)
     return () => {
       console.log('Store unmounted - last subscriber removed');

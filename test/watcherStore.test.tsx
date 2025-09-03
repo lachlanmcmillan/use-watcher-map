@@ -494,10 +494,7 @@ describe('watcherStore', () => {
 
   test('properly handle undefined paths after removing all array items', () => {
     const store = watcherStore(initialState);
-    expect(store.getPath('todos.0.tags')).toEqual([
-      'frontend',
-      'learning',
-    ]);
+    expect(store.getPath('todos.0.tags')).toEqual(['frontend', 'learning']);
 
     const mockFn = mock(() => {});
     store.__addSubscriber__(mockFn, 'todos.0.tags');
@@ -511,22 +508,22 @@ describe('watcherStore', () => {
     test('call onMount when first subscriber is added', () => {
       const store = watcherStore(initialState);
       const onMountFn = mock(() => {});
-      
+
       store.onMount(onMountFn);
-      
+
       // onMount should not be called yet
       expect(onMountFn).not.toHaveBeenCalled();
-      
+
       // Add first subscriber - this should trigger onMount
       const mockSubscriber = mock(() => {});
       store.__addSubscriber__(mockSubscriber);
-      
+
       expect(onMountFn).toHaveBeenCalledTimes(1);
-      
+
       // Adding another subscriber should not call onMount again
       const mockSubscriber2 = mock(() => {});
       store.__addSubscriber__(mockSubscriber2);
-      
+
       expect(onMountFn).toHaveBeenCalledTimes(1);
     });
 
@@ -534,22 +531,22 @@ describe('watcherStore', () => {
       const store = watcherStore(initialState);
       const onUnmountFn = mock(() => {});
       const onMountFn = mock(() => onUnmountFn);
-      
+
       store.onMount(onMountFn);
-      
+
       // Add subscribers
       const mockSubscriber1 = mock(() => {});
       const mockSubscriber2 = mock(() => {});
       store.__addSubscriber__(mockSubscriber1);
       store.__addSubscriber__(mockSubscriber2);
-      
+
       expect(onMountFn).toHaveBeenCalledTimes(1);
       expect(onUnmountFn).not.toHaveBeenCalled();
-      
+
       // Remove first subscriber - should not call onUnmount yet
       store.__removeSubscriber__(mockSubscriber1);
       expect(onUnmountFn).not.toHaveBeenCalled();
-      
+
       // Remove last subscriber - should call onUnmount
       store.__removeSubscriber__(mockSubscriber2);
       expect(onUnmountFn).toHaveBeenCalledTimes(1);
@@ -560,17 +557,17 @@ describe('watcherStore', () => {
       const onMountFn = mock(() => {
         // Return nothing/undefined
       });
-      
+
       store.onMount(onMountFn);
-      
+
       const mockSubscriber = mock(() => {});
       store.__addSubscriber__(mockSubscriber);
-      
+
       expect(onMountFn).toHaveBeenCalledTimes(1);
-      
+
       // Remove subscriber - should not throw or call any onUnmount
       store.__removeSubscriber__(mockSubscriber);
-      
+
       // Test passes if no error is thrown
     });
 
@@ -578,22 +575,22 @@ describe('watcherStore', () => {
       const store = watcherStore(initialState);
       const onUnmountFn = mock(() => {});
       const onMountFn = mock(() => onUnmountFn);
-      
+
       store.onMount(onMountFn);
-      
+
       // First cycle
       const mockSubscriber1 = mock(() => {});
       store.__addSubscriber__(mockSubscriber1);
       expect(onMountFn).toHaveBeenCalledTimes(1);
-      
+
       store.__removeSubscriber__(mockSubscriber1);
       expect(onUnmountFn).toHaveBeenCalledTimes(1);
-      
+
       // Second cycle
       const mockSubscriber2 = mock(() => {});
       store.__addSubscriber__(mockSubscriber2);
       expect(onMountFn).toHaveBeenCalledTimes(2);
-      
+
       store.__removeSubscriber__(mockSubscriber2);
       expect(onUnmountFn).toHaveBeenCalledTimes(2);
     });
@@ -601,13 +598,13 @@ describe('watcherStore', () => {
     test('onMount is called when adding path-specific subscribers', () => {
       const store = watcherStore(initialState);
       const onMountFn = mock(() => {});
-      
+
       store.onMount(onMountFn);
-      
+
       // Add path-specific subscriber - should trigger onMount
       const mockSubscriber = mock(() => {});
       store.__addSubscriber__(mockSubscriber, 'todos.0.completed');
-      
+
       expect(onMountFn).toHaveBeenCalledTimes(1);
     });
 
@@ -615,15 +612,15 @@ describe('watcherStore', () => {
       const store = watcherStore(initialState);
       const onUnmountFn = mock(() => {});
       const onMountFn = mock(() => onUnmountFn);
-      
+
       store.onMount(onMountFn);
-      
+
       // Add path-specific subscriber
       const mockSubscriber = mock(() => {});
       store.__addSubscriber__(mockSubscriber, 'todos.0.completed');
-      
+
       expect(onMountFn).toHaveBeenCalledTimes(1);
-      
+
       // Remove the subscriber - should call onUnmount
       store.__removeSubscriber__(mockSubscriber);
       expect(onUnmountFn).toHaveBeenCalledTimes(1);
@@ -631,30 +628,30 @@ describe('watcherStore', () => {
 
     test('onMount not called if store already has subscribers', () => {
       const store = watcherStore(initialState);
-      
+
       // Add a subscriber first
       const existingSubscriber = mock(() => {});
       store.__addSubscriber__(existingSubscriber);
-      
+
       // Now set onMount - it should not be called immediately
       const onMountFn = mock(() => {});
       store.onMount(onMountFn);
-      
+
       expect(onMountFn).not.toHaveBeenCalled();
-      
+
       // Add another subscriber - still should not call onMount
       const newSubscriber = mock(() => {});
       store.__addSubscriber__(newSubscriber);
-      
+
       expect(onMountFn).not.toHaveBeenCalled();
-      
+
       // Only when all subscribers are removed and a new one is added should onMount be called
       store.__removeSubscriber__(existingSubscriber);
       store.__removeSubscriber__(newSubscriber);
-      
+
       const finalSubscriber = mock(() => {});
       store.__addSubscriber__(finalSubscriber);
-      
+
       expect(onMountFn).toHaveBeenCalledTimes(1);
     });
 
@@ -662,26 +659,26 @@ describe('watcherStore', () => {
       const store = watcherStore(initialState);
       const firstOnUnmount = mock(() => {});
       const secondOnUnmount = mock(() => {});
-      
+
       const onMountFn = mock(() => firstOnUnmount);
       store.onMount(onMountFn);
-      
+
       // First cycle
       const subscriber1 = mock(() => {});
       store.__addSubscriber__(subscriber1);
-      
+
       // Mock the onMount to return a different onUnmount function for next cycle
       onMountFn.mockReturnValue(secondOnUnmount);
-      
+
       store.__removeSubscriber__(subscriber1);
       expect(firstOnUnmount).toHaveBeenCalledTimes(1);
       expect(secondOnUnmount).not.toHaveBeenCalled();
-      
+
       // Second cycle should use the new onUnmount
       const subscriber2 = mock(() => {});
       store.__addSubscriber__(subscriber2);
       store.__removeSubscriber__(subscriber2);
-      
+
       expect(firstOnUnmount).toHaveBeenCalledTimes(1);
       expect(secondOnUnmount).toHaveBeenCalledTimes(1);
     });

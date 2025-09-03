@@ -7,7 +7,7 @@ import classes from './rerenderIndicator.module.css';
  *
  * The border of the component briefly highlights when it re-renders,
  * making it easy to visualize which components update in response to state changes.
- * 
+ *
  * Put this *inside* the component you wish to track rendering of.
  */
 export const RerenderIndicator = ({

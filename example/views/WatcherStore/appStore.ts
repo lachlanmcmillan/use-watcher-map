@@ -1,4 +1,4 @@
-import { watcherStore } from "../../../src";
+import { watcherStore } from '../../../src';
 
 export interface User {
   id: number;
@@ -88,7 +88,7 @@ export const fetchUsers = () => {
 // @todo convert this into a computed/derived store
 export const getCurrentUser = (): User | null => {
   const currentUserId = appStore.usePath('auth.userId');
-  console.log("currentUserId: ", currentUserId)
+  console.log('currentUserId: ', currentUserId);
   const users = appStore.usePath('users.data') as User[];
 
   if (!currentUserId) return null;

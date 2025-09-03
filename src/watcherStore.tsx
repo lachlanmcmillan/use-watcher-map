@@ -11,12 +11,12 @@ export interface WatcherStore<T extends Record<string, any>> {
   getState: () => T;
   /** get a specific path */
   getPath: (path: PathOf<T>) => any;
-  /** 
+  /**
    * onMount will call the supplied function when the store is mounted.
    *
    * If the function returns a function, that function will be called when the
    * store is unmounted.
-   * 
+   *
    * Only one onMount function is kept, so calling onMount multiple times will
    * override the previous function.
    */
@@ -132,7 +132,7 @@ export const watcherStore = <T extends Record<string, any>>(
   const subscribe = (fn: Function) => {
     addSubscriber(fn);
 
-  return () => removeSubscriber(fn);
+    return () => removeSubscriber(fn);
   };
 
   const subscribePathFactory = (path: string) => {
@@ -235,7 +235,7 @@ export const watcherStore = <T extends Record<string, any>>(
 
   const onMount = (fn: () => void) => {
     onMountFn = fn;
-  }
+  };
 
   return {
     batch,

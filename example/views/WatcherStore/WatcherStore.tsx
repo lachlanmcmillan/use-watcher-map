@@ -22,7 +22,6 @@ export function WatcherStoreExample() {
 
       <WatchingState />
 
-
       {!loggedIn ? <LoginPage /> : <Layout />}
     </div>
   );

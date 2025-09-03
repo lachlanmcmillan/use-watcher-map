@@ -26,8 +26,8 @@ interface MyType {
   // optional object
   emergencyContact?: {
     name: string;
-    phone: string; 
-  }
+    phone: string;
+  };
   // nullable object
   spouse?: {
     name: string;
