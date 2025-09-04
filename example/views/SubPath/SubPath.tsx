@@ -1,5 +1,5 @@
 import classes from './subPath.module.css';
-import { useWatcherMap, WatcherMapReturn } from '../../../src/useWatcherMap';
+import { useWatcherMap, WatcherMap } from '../../../src/useWatcherMap';
 import { RerenderIndicator } from '../../components/RerenderIndicator/RerenderIndicator';
 import { DisplayRow } from '../../components/DisplayRow/DisplayRow';
 
@@ -89,7 +89,7 @@ export function SubPathExample() {
   );
 }
 
-const WatchingState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
+const WatchingState = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const state = watcher.useState();
 
   return (
@@ -104,7 +104,7 @@ const WatchingState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
 const WatchingObjectOne = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   const objectOne = watcher.usePath('objectOne');
   return (
@@ -119,7 +119,7 @@ const WatchingObjectOne = ({
 const WatchingCounterOne = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   const counterOne = watcher.usePath('objectOne.counterOne');
   return (
@@ -134,7 +134,7 @@ const WatchingCounterOne = ({
 const WatchingCounterTwo = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   const counterTwo = watcher.usePath('objectOne.counterTwo');
   return (
@@ -149,7 +149,7 @@ const WatchingCounterTwo = ({
 const ListeningCounterOne = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   watcher.watchPath('objectOne.counterOne', value => {
     console.log(`watcher.watchPath("objectOne.counterOne") =>`, value);
@@ -166,7 +166,7 @@ const ListeningCounterOne = ({
 const ListeningCounterTwo = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   watcher.watchPath('objectOne.counterTwo', value => {
     console.log(`watcher.watchPath("objectOne.counterTwo") =>`, value);
@@ -180,7 +180,7 @@ const ListeningCounterTwo = ({
   );
 };
 
-const ListeningState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
+const ListeningState = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchState(value => {
     console.log(`watcher.watchState() =>`, value);
   });

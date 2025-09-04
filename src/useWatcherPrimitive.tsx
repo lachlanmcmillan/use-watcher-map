@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
-export interface WatcherReturn<T extends unknown> {
+export interface WatcherPrimitive<T extends unknown> {
   /** get the entire state */
   getState: () => T;
   /** override the entire state */
@@ -22,9 +22,9 @@ export interface WatcherReturn<T extends unknown> {
  *
  * @example const isSubmitting = useWatcher(true);
  */
-export const useWatcher = <T extends unknown>(
+export const useWatcherPrimitive = <T extends unknown>(
   defaultValue: T
-): WatcherReturn<T> => {
+): WatcherPrimitive<T> => {
   const state = useRef(defaultValue);
   const subscribers = useRef<{ fn: Function }[]>([]);
 

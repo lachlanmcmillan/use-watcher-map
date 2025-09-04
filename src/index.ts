@@ -1,8 +1,8 @@
 export { useWatcherMap } from './useWatcherMap';
-export type { WatcherMapReturn } from './useWatcherMap';
+export type { WatcherMap } from './useWatcherMap';
 
-export { useWatcher } from './useWatcher';
-export type { WatcherReturn } from './useWatcher';
+export { useWatcherPrimitive as useWatcher } from './useWatcherPrimitive';
+export type { WatcherPrimitive } from './useWatcherPrimitive';
 
 export { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 

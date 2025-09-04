@@ -1,5 +1,5 @@
 import classes from './simple.module.css';
-import { useWatcherMap, WatcherMapReturn } from '../../../src/useWatcherMap';
+import { useWatcherMap, WatcherMap } from '../../../src/useWatcherMap';
 import { RerenderIndicator } from '../../components/RerenderIndicator/RerenderIndicator';
 import { DisplayRow } from '../../components/DisplayRow/DisplayRow';
 
@@ -62,7 +62,7 @@ export function Simple() {
   );
 }
 
-const WatchingState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
+const WatchingState = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const state = watcher.useState();
 
   return (
@@ -77,7 +77,7 @@ const WatchingState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
 const WatchingCounterOne = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   const counterOne = watcher.usePath('counterOne');
   return (
@@ -92,7 +92,7 @@ const WatchingCounterOne = ({
 const WatchingCounterTwo = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   const counterTwo = watcher.usePath('counterTwo');
   return (
@@ -107,7 +107,7 @@ const WatchingCounterTwo = ({
 const ListeningCounterOne = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   watcher.watchPath('counterOne', value => {
     console.log(`watcher.watchpath("counterOne") =>`, value);
@@ -124,7 +124,7 @@ const ListeningCounterOne = ({
 const ListeningCounterTwo = ({
   watcher,
 }: {
-  watcher: WatcherMapReturn<State>;
+  watcher: WatcherMap<State>;
 }) => {
   watcher.watchPath('counterTwo', value => {
     console.log(`watcher.watchpath("counterTwo") =>`, value);
@@ -138,7 +138,7 @@ const ListeningCounterTwo = ({
   );
 };
 
-const ListeningState = ({ watcher }: { watcher: WatcherMapReturn<State> }) => {
+const ListeningState = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchState(value => {
     console.log(`watcher.watchState((value) => { ... }) =>`, value);
   });

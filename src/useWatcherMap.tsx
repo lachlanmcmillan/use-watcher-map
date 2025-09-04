@@ -1,62 +1,34 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
-import type { PathOf, TypeAtPath } from './pathOf';
+import { WatcherBase } from './watcherBase';
 
-export interface WatcherMapReturn<T extends Record<string, any>> {
-  /** get the entire state */
-  getState: () => T;
-  /** get a specific path */
-  getPath: <P extends PathOf<T>>(path: P) => TypeAtPath<T, P>;
-  /** override the entire state */
-  setState: (data: T) => void;
-  /** update a specific path */
-  setPath: <P extends PathOf<T>>(path: P, value: TypeAtPath<T, P>) => void;
-  /** clear a specific path */
-  clearPath: (path: PathOf<T>, removeEmptyObjects?: boolean) => void;
-  /** make multiple updates and call notifiers at the end */
-  batch: (fn: () => void) => void;
-  /** useState will re-render the component when the state changes */
-  useState: () => T;
-  /**
-   * usePath will re-render the component when the specified path changes
-   *
-   * @param path - The path to watch
-   * @returns The value at the specified path
-   */
-  usePath: <P extends PathOf<T>>(path: P) => TypeAtPath<T, P>;
-  /**
-   * watchState will call the supplied function when the state changes.
-   * It uses a useEffect underneath to cleanup properly
-   */
-  watchState: (fn: (value: T) => void) => void;
-  /** watchPath will call the supplied function when the path changes */
-  watchPath: <P extends PathOf<T>>(
-    path: P,
-    fn: (value: TypeAtPath<T, P>) => void
-  ) => void;
-  // internal fns, do not call directly, exported for testing */
-  __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
-  __removeSubscriber__: (fn: Function) => void;
-}
+export interface WatcherMap<T extends Record<string, any>>
+  extends WatcherBase<T> {}
 
 export const useWatcherMap = <T extends Record<string, any>>(
   defaultValue: T
-): WatcherMapReturn<T> => {
+): WatcherMap<T> => {
   const state = useRef(defaultValue);
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
   const batchedUpdates = useRef<{ value: T; paths: string[] }[] | null>(null);
 
   // --- helper fns ---
 
-  const addSubscriber = (fn: Function, path?: string) => {
+  const addSubscriber = useCallback((fn: Function, path?: string) => {
     if (!subscribers.current.some(sub => sub.fn === fn)) {
       subscribers.current.push({ path, fn });
     }
-  };
+  }, []);
 
-  const removeSubscriber = (fn: Function) => {
+  const removeSubscriber = useCallback((fn: Function) => {
     subscribers.current = subscribers.current.filter(sub => sub.fn !== fn);
-  };
+  }, []);
 
   /**
    * each path that's being updated should be a full path, not parts
@@ -117,29 +89,11 @@ export const useWatcherMap = <T extends Record<string, any>>(
     return () => removeSubscriber(fn);
   }, []);
 
-  const subscribePathFactory = (path: string) => {
-    return useCallback(
-      (fn: Function) => {
-        addSubscriber(fn, path);
-
-        return () => removeSubscriber(fn);
-      },
-      [path]
-    );
-  };
-
   const getState = useCallback(() => state.current, []);
 
   const getPath = useCallback((path: string): any => {
     return getDeepPath(state.current, path.split('.'));
   }, []);
-
-  // returns a function that always returns the same path, useful for useSyncExternalStore
-  const getPathFactory = (path: string) => {
-    return useCallback((): any => {
-      return getDeepPath(state.current, path.split('.'));
-    }, [path]);
-  };
 
   const batch = useCallback((fn: () => void) => {
     if (batchedUpdates.current) {
@@ -178,21 +132,18 @@ export const useWatcherMap = <T extends Record<string, any>>(
    * setPath - updates a specific path in the state and notifies subscribers
    * of the changes.
    */
-  const setPath = useCallback(
-    (path: string, value: any) => {
-      if (typeof state.current === 'undefined' || state.current === null) {
-        state.current = {} as T;
-      }
+  const setPath = useCallback((path: string, value: any) => {
+    if (typeof state.current === 'undefined' || state.current === null) {
+      state.current = {} as T;
+    }
 
-      const pathParts = path.split('.');
-      const newState = setDeepPathClone(state.current, pathParts, value);
+    const pathParts = path.split('.');
+    const newState = setDeepPathClone(state.current, pathParts, value);
 
-      state.current = newState;
+    state.current = newState;
 
-      notifySubscribers(state.current, [path]);
-    },
-    [subscribers.current]
-  );
+    notifySubscribers(state.current, [path]);
+  }, []);
 
   const clearPath = useCallback((path: string, removeEmptyObjects = false) => {
     if (typeof state.current === 'undefined' || state.current === null) {
@@ -211,45 +162,54 @@ export const useWatcherMap = <T extends Record<string, any>>(
 
   // do not call setState from within this function or it will cause
   // an infinite loop
-  const watchState = useCallback(
-    (fn: Function) =>
-      useEffect(() => {
-        addSubscriber(fn);
+  const watchState = (fn: Function) =>
+    useEffect(() => {
+      addSubscriber(fn);
 
-        return () => removeSubscriber(fn);
-      }, []),
-    []
-  );
+      return () => removeSubscriber(fn);
+    }, []);
 
-  const watchPath = useCallback(
-    (path: string, fn: (value: any) => void) =>
-      useEffect(() => {
-        addSubscriber(fn, path);
+  const watchPath = (path: string, fn: (value: any) => void) =>
+    useEffect(() => {
+      addSubscriber(fn, path);
 
-        return () => removeSubscriber(fn);
-      }, []),
-    []
-  );
+      return () => removeSubscriber(fn);
+    }, [path]);
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
 
-  const usePath = (path: string) =>
-    useSyncExternalStore(subscribePathFactory(path), getPathFactory(path));
+  const usePath = (path: string) => {
+    const subscribePath = useCallback(
+      (fn: Function) => {
+        addSubscriber(fn, path);
+        return () => removeSubscriber(fn);
+      },
+      [path]
+    );
 
+    const getPathSnapshot = useCallback(() => {
+      return getDeepPath(state.current, path.split('.'));
+    }, [path]);
 
-  return {
-    batch,
-    getState,
-    getPath,
-    setState,
-    setPath,
-    clearPath,
-    useState,
-    usePath,
-    watchState,
-    watchPath,
-    // internal fns, do not call directly
-    __addSubscriber__: addSubscriber,
-    __removeSubscriber__: removeSubscriber,
+    return useSyncExternalStore(subscribePath, getPathSnapshot);
   };
+
+  return useMemo(
+    () => ({
+      batch,
+      getState,
+      getPath,
+      setState,
+      setPath,
+      clearPath,
+      useState,
+      usePath,
+      watchState,
+      watchPath,
+      // internal fns, do not call directly
+      __addSubscriber__: addSubscriber,
+      __removeSubscriber__: removeSubscriber,
+    }),
+    []
+  );
 };

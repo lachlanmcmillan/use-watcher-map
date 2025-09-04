@@ -1,16 +1,8 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
-import type { PathOf, TypeAtPath } from './pathOf';
+import type { WatcherBase } from './watcherBase';
 
-export interface WatcherStore<T extends Record<string, any>> {
-  /** make multiple updates and call notifiers at the end */
-  batch: (fn: () => void) => void;
-  /** clear a specific path */
-  clearPath: (path: PathOf<T>, removeEmptyObjects?: boolean) => void;
-  /** get the entire state */
-  getState: () => T;
-  /** get a specific path */
-  getPath: <P extends PathOf<T>>(path: P) => TypeAtPath<T, P>;
+export interface WatcherStore<T extends Record<string, any>> extends WatcherBase<T> {
   /**
    * onMount will call the supplied function when the store is mounted.
    *
@@ -21,24 +13,6 @@ export interface WatcherStore<T extends Record<string, any>> {
    * override the previous function.
    */
   onMount: (fn: () => void) => void;
-  /** override the entire state */
-  setState: (data: T) => void;
-  /** update a specific path */
-  setPath: <P extends PathOf<T>>(path: P, value: TypeAtPath<T, P>) => void;
-  /** useState will re-render the component when the state changes */
-  useState: () => T;
-  /** usePath will re-render the component when the specified path changes */
-  usePath: <P extends PathOf<T>>(path: P) => TypeAtPath<T, P>;
-  /**
-   * watchState will call the supplied function when the state changes.
-   * It uses a useEffect underneath to cleanup properly
-   */
-  watchState: (fn: (value: T) => void) => void;
-  /** watchPath will call the supplied function when the path changes */
-  watchPath: <P extends PathOf<T>>(path: P, fn: (value: TypeAtPath<T, P>) => void) => void;
-  // internal fns, do not call directly, exported for testing */
-  __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
-  __removeSubscriber__: (fn: Function) => void;
 }
 
 /**
