@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
-import type { PathOf } from './pathOf';
+import type { PathOf, TypeAtPath } from './pathOf';
 
 export interface WatcherStore<T extends Record<string, any>> {
   /** make multiple updates and call notifiers at the end */
@@ -10,7 +10,7 @@ export interface WatcherStore<T extends Record<string, any>> {
   /** get the entire state */
   getState: () => T;
   /** get a specific path */
-  getPath: (path: PathOf<T>) => any;
+  getPath: <P extends PathOf<T>>(path: P) => TypeAtPath<T, P>;
   /**
    * onMount will call the supplied function when the store is mounted.
    *
@@ -24,18 +24,18 @@ export interface WatcherStore<T extends Record<string, any>> {
   /** override the entire state */
   setState: (data: T) => void;
   /** update a specific path */
-  setPath: (path: PathOf<T>, value: any) => void;
+  setPath: <P extends PathOf<T>>(path: P, value: TypeAtPath<T, P>) => void;
   /** useState will re-render the component when the state changes */
   useState: () => T;
   /** usePath will re-render the component when the specified path changes */
-  usePath: (path: PathOf<T>) => any;
+  usePath: <P extends PathOf<T>>(path: P) => TypeAtPath<T, P>;
   /**
    * watchState will call the supplied function when the state changes.
    * It uses a useEffect underneath to cleanup properly
    */
   watchState: (fn: (value: T) => void) => void;
   /** watchPath will call the supplied function when the path changes */
-  watchPath: (path: PathOf<T>, fn: (value: any) => void) => void;
+  watchPath: <P extends PathOf<T>>(path: P, fn: (value: TypeAtPath<T, P>) => void) => void;
   // internal fns, do not call directly, exported for testing */
   __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
   __removeSubscriber__: (fn: Function) => void;
@@ -237,6 +237,11 @@ export const watcherStore = <T extends Record<string, any>>(
     onMountFn = fn;
   };
 
+  const useState = () => useSyncExternalStore<T>(subscribe, getState);
+
+  const usePath = (path: string) =>
+    useSyncExternalStore(subscribePathFactory(path), getPathFactory(path));
+
   return {
     batch,
     clearPath,
@@ -245,12 +250,8 @@ export const watcherStore = <T extends Record<string, any>>(
     onMount,
     setPath,
     setState,
-    useState: () => useSyncExternalStore<T>(subscribe, getState),
-    usePath: (path: string) =>
-      useSyncExternalStore<string>(
-        subscribePathFactory(path),
-        getPathFactory(path)
-      ),
+    useState,
+    usePath,
     watchState,
     watchPath,
     // internal fns, do not call directly

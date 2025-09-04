@@ -8,6 +8,20 @@ export type PathOf<T extends Record<string, any>> = {
     : `${Key}`;
 }[FilteredKeys<T>];
 
+/**
+ * Get the type at a specified path
+ *
+ * eg. TypeAtPath<MyType, 'address.city'> // evals to 'New York' | 'Los Angeles'
+ */
+export type TypeAtPath<
+  T extends Record<string, any>,
+  Path extends string,
+> = Path extends `${infer Key}.${infer Rest}`
+  ? NonNullable<T[Key]> extends Record<string, any>
+    ? TypeAtPath<NonNullable<T[Key]>, Rest>
+    : never
+  : T[Path];
+
 // ----------------------------------------------------------------------------
 // EXAMPLE USAGE
 // ----------------------------------------------------------------------------
@@ -63,6 +77,33 @@ const example84: PathOf<MyType> = 'record.key1'; // record access
 // const badExample10: PathOf<MyType> = 'color'; // expected error
 // const badExample11: PathOf<MyType> = 'address.friends.sam'; // expected error
 // const badExample12: PathOf<MyType> = 'emergencyContact.age'; // expected error
+
+// Test TypeAtPath examples - corresponding to PathOf examples above
+const typeExample01: TypeAtPath<MyType, 'name'> = 'John Doe'; // string
+const typeExample02: TypeAtPath<MyType, 'address'> = {
+  street: { line1: '123 Main St' },
+  city: 'New York',
+}; // address object
+const typeExample03: TypeAtPath<MyType, 'address.street'> = {
+  line1: '123 Main St',
+  line2: 'Apt 1',
+}; // street object
+const typeExample04: TypeAtPath<MyType, 'address.street.line1'> = '123 Main St'; // string
+const typeExample05: TypeAtPath<MyType, 'address.street.line2'> = 'Apt 1'; // string | undefined
+const typeExample06: TypeAtPath<MyType, 'address.city'> = 'New York'; // 'New York' | 'Los Angeles'
+const typeExample07: TypeAtPath<MyType, 'emergencyContact.name'> = 'Jane Doe'; // string
+const typeExample08: TypeAtPath<MyType, 'emergencyContact.phone'> = '555-1234'; // string
+const typeExample09: TypeAtPath<MyType, 'spouse.name'> = 'Jane'; // string
+const typeExample10: TypeAtPath<MyType, 'spouse.age'> = 30; // number
+const typeExample11: TypeAtPath<MyType, 'friends'> = ['Alice', 'Bob']; // string[]
+const typeExample12: TypeAtPath<MyType, 'friends.0'> = 'Alice'; // string
+const typeExample13: TypeAtPath<MyType, 'sub.a.b'> = 42; // number
+const typeExample84: TypeAtPath<MyType, 'record.key1'> = 'value1'; // string
+
+// Test with undefined values for optional properties
+const typeExampleUndef1: TypeAtPath<MyType, 'age'> = undefined; // number | undefined
+const typeExampleUndef2: TypeAtPath<MyType, 'age'> = 25; // number | undefined
+const typeExampleUndef3: TypeAtPath<MyType, 'address.street.line2'> = undefined; // string | undefined
 
 // ----------------------------------------------------------------------------
 // EXPLANATION OF THE TYPES
