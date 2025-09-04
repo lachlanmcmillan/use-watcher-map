@@ -9,4 +9,4 @@ export { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 export { watcherStore } from './watcherStore';
 export type { WatcherStore } from './watcherStore';
 
-export type { PathOf } from './pathOf';
+export type { PathOf, TypeAtPath } from './pathOf';
