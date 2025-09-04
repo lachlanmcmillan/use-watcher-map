@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## 5.0.0
+
+- **NEW**: Improved TypeScript path support with `TypeAtPath<T>` type
+
+All path-based methods now know what type is being set or returned!
+
+```typescript
+  interface UserState {
+    user: {
+      name: string;
+      address: {
+        street: string;
+        city: string;
+      };
+    };
+    settings: {
+      theme: 'light' | 'dark';
+    };
+  }
+
+  const store = useWatcherStore<UserState>({
+    /* ... */
+  });
+
+  // TypeScript autocomplete and validation
+  store.getPath('user.name'); // string 
+  store.setPath('user.address.city', 'NYC'); // string
+  store.usePath('settings.theme'); // 'light' | 'dark'
+
+  // TypeScript errors for invalid paths
+  store.setPath('user.name', 12345); // ❌ Error: invalid argument
+  store.setPath('user.address.city', true); // ❌ Error: invalid argument
+  ```
+
 ## 4.0.1
 
 - Fix `clearPath` allowing any string to be cleared.
