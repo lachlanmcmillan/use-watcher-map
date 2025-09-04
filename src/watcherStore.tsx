@@ -6,7 +6,7 @@ export interface WatcherStore<T extends Record<string, any>> {
   /** make multiple updates and call notifiers at the end */
   batch: (fn: () => void) => void;
   /** clear a specific path */
-  clearPath: (path: string, removeEmptyObjects?: boolean) => void;
+  clearPath: (path: PathOf<T>, removeEmptyObjects?: boolean) => void;
   /** get the entire state */
   getState: () => T;
   /** get a specific path */

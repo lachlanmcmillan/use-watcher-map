@@ -12,7 +12,7 @@ export interface WatcherMapReturn<T extends Record<string, any>> {
   /** update a specific path */
   setPath: (path: PathOf<T>, value: any) => void;
   /** clear a specific path */
-  clearPath: (path: string, removeEmptyObjects?: boolean) => void;
+  clearPath: (path: PathOf<T>, removeEmptyObjects?: boolean) => void;
   /** make multiple updates and call notifiers at the end */
   batch: (fn: () => void) => void;
   /** useState will re-render the component when the state changes */
