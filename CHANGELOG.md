@@ -1,6 +1,16 @@
 # CHANGELOG
 
-## 4.0.0 - path typing
+## 4.0.1
+
+- Fix `clearPath` allowing any string to be cleared.
+
+  Updated the function signature
+
+  ```typescript
+  function clearPath(path: PathOf<T>, removeEmptyObjects?: boolean): void;
+  ```
+
+## 4.0.0 - Path Typing
 
 - **NEW**: Add comprehensive TypeScript path support with `PathOf<T>` type
 
