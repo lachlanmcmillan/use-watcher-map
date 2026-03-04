@@ -1,6 +1,6 @@
 import { describe, test, expect, mock, beforeEach } from 'bun:test';
 import { renderHook, act } from '@testing-library/react';
-import { useWatcher } from '../src/useWatcher';
+import { useWatcher } from '../src/index';
 
 describe('useWatcher', () => {
   const initialState = 0;

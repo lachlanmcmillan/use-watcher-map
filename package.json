@@ -44,9 +44,20 @@
     "url": "git+https://github.com/lachlanmcmillan/use-watcher-map.git"
   },
   "keywords": [
-    "hook",
     "react",
-    "state"
+    "state",
+    "state-management",
+    "hook",
+    "hooks",
+    "path",
+    "subscription",
+    "fine-grained",
+    "re-render",
+    "performance",
+    "typescript",
+    "nested-state",
+    "watcher",
+    "store"
   ],
   "author": "Lachlan McMillan <lachlanmcmillan@users.noreply.github.com>",
   "license": "MIT",

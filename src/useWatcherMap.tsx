@@ -11,6 +11,20 @@ import { WatcherBase } from './watcherBase';
 export interface WatcherMap<T extends Record<string, any>>
   extends WatcherBase<T> {}
 
+/**
+ * React hook for managing nested object state with path-based subscriptions.
+ * Components using `usePath` only re-render when their specific path changes.
+ *
+ * @param defaultValue - The initial state object
+ * @returns A WatcherMap with getPath, setPath, usePath, watchPath, batch, etc.
+ *
+ * @example
+ * const watcher = useWatcherMap<{ user: { name: string } }>({ user: { name: 'Alice' } });
+ * // In a child component:
+ * const name = watcher.usePath('user.name'); // only re-renders when name changes
+ * // To update:
+ * watcher.setPath('user.name', 'Bob');
+ */
 export const useWatcherMap = <T extends Record<string, any>>(
   defaultValue: T
 ): WatcherMap<T> => {

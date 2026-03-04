@@ -1,0 +1,53 @@
+# use-watcher-map
+
+> React state management with path-based subscriptions for fine-grained re-renders. TypeScript-first. React 19+. Zero dependencies.
+
+## Install
+
+npm install use-watcher-map
+
+## Core APIs
+
+### useWatcherMap<T>(initialState): WatcherMap<T>
+React hook. For nested object state. Call in a parent component, pass the watcher to children.
+Methods: getState(), getPath(path), setState(state), setPath(path, value), clearPath(path), usePath(path), useState(), watchPath(path, fn), watchState(fn), batch(fn)
+
+### useWatcher<T>(initialValue): WatcherPrimitive<T>
+React hook. For primitive/simple values.
+Methods: getState(), setState(value), useState(), watchState(fn)
+
+### watcherStore<T>(initialState): WatcherStore<T>
+NOT a hook. Module-level global store. Same API as useWatcherMap + onMount(fn).
+
+## Path System
+
+Dot-notation strings: "user.name", "todos.0.completed", "settings.theme"
+PathOf<T> generates all valid paths as a string union (TypeScript autocomplete).
+TypeAtPath<T, P> gives the type of the value at a path (type-safe setPath).
+
+## Key Pattern
+
+```tsx
+const watcher = useWatcherMap<{ user: { name: string }; count: number }>({
+  user: { name: 'Alice' },
+  count: 0,
+});
+
+// In child component — only re-renders when user.name changes:
+const name = watcher.usePath('user.name');
+
+// Update — only notifies subscribers of user.name:
+watcher.setPath('user.name', 'Bob');
+
+// Batch multiple updates, notify once:
+watcher.batch(() => {
+  watcher.setPath('user.name', 'Bob');
+  watcher.setPath('count', 1);
+});
+```
+
+## Types
+
+WatcherMap<T>, WatcherPrimitive<T>, WatcherStore<T> — return types of the three APIs.
+PathOf<T> — union of all valid dot-notation paths.
+TypeAtPath<T, P> — type at a given path.

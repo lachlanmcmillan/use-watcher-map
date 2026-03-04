@@ -18,9 +18,18 @@ export interface WatcherPrimitive<T extends unknown> {
 }
 
 /**
- * useWatcher - A simple version of the useWatcherMap for use with primitives,
+ * React hook for managing a single primitive or simple value.
+ * Lighter alternative to useWatcherMap when you don't need path-based subscriptions.
  *
- * @example const isSubmitting = useWatcher(true);
+ * @param defaultValue - The initial value
+ * @returns A WatcherPrimitive with getState, setState, useState, watchState
+ *
+ * @example
+ * const isLoading = useWatcher(false);
+ * // In a child component:
+ * const loading = isLoading.useState(); // re-renders when value changes
+ * // To update:
+ * isLoading.setState(true);
  */
 export const useWatcherPrimitive = <T extends unknown>(
   defaultValue: T

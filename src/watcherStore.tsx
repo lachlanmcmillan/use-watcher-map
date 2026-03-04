@@ -16,7 +16,20 @@ export interface WatcherStore<T extends Record<string, any>> extends WatcherBase
 }
 
 /**
- * watcherStore - A store that allows you to watch for changes to the state
+ * Create a global store with path-based subscriptions. Unlike useWatcherMap,
+ * this is NOT a hook — create it at module level and use its usePath/useState
+ * methods inside React components.
+ *
+ * @param defaultValue - The initial state object
+ * @returns A WatcherStore with all WatcherMap methods plus onMount lifecycle
+ *
+ * @example
+ * // store.ts
+ * export const appStore = watcherStore({ user: { name: 'Alice' }, theme: 'dark' });
+ *
+ * // Component.tsx
+ * const theme = appStore.usePath('theme'); // subscribes to theme changes only
+ * appStore.setPath('theme', 'light');
  */
 export const watcherStore = <T extends Record<string, any>>(
   defaultValue: T
