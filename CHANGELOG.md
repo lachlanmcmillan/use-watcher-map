@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 5.1.0
+
+- **Rewrite README** with full API reference, code examples, quick start guide, and comparison table
+- **Add CLAUDE.md** for AI agent context (architecture, key patterns, dev commands)
+- **Add llms.txt** for LLM tool consumption following the llmstxt.org convention
+- **Add JSDoc** with `@example` tags to all exported functions (`useWatcherMap`, `useWatcher`, `watcherStore`)
+- **Expand package.json keywords** for better npm discoverability
+- **Fix** `useWatcher` test import path
+
 ## 5.0.0
 
 - **NEW**: Improved TypeScript path support with `TypeAtPath<T>` type
