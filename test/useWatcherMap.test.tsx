@@ -456,6 +456,37 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenCalledWith(expectedTodos);
     });
 
+    test('call the subscriber on array.length and the array is replaced', () => {
+      const { result } = renderHook(() => useWatcherMap({ arr: [] as any[] }));
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn, 'arr.length');
+
+      // replace the entire array
+      act(() => {
+        result.current.setPath('arr', ['a', 'b', 'c']);
+      });
+
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenCalledWith(3);
+    });
+
+    test('not call the subscriber on array.length when the array is mutated', () => {
+      const { result } = renderHook(() => useWatcherMap({ arr: [] as any[] }));
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn, 'arr.length');
+
+      // Mutate the array instance. There's no real way use-watcher-map could detect
+      // this without proxies and other funny things, so you have to replace the
+      // array just like in resact's useState.
+      act(() => {
+        result.current.getPath('arr').push('a');
+      });
+
+      expect(mockFn).toHaveBeenCalledTimes(0);
+    });
+
     test('no longer call the function after removing subscriber', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});
