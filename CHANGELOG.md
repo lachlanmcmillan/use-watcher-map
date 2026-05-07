@@ -1,6 +1,21 @@
 # CHANGELOG
 
-## 6.0.0 BETA
+## 6.0.0-beta.2
+
+- **Fix** `usePath` causing repeated `onMount` / `onUnmount` calls
+
+  `subscribePathFactory` and `getPathFactory` returned a fresh function on every
+  render, so `useSyncExternalStore` saw a new `subscribe` reference each commit
+  and resubscribed every time. With path-tracked subscribers, the resulting
+  1 → 0 → 1 transitions fired `onMount` / `onUnmount` repeatedly. Both factories
+  now cache their function per path so the identity is stable across renders.
+
+  Tests added: `usePath re-renders do not churn onMount/onUnmount` and
+  `two consumers on the same path are tracked independently`.
+
+- **Fix** `__addSubscriber__` type — `skipMountTracking` opts only on `WatcherStore`.
+
+## 6.0.0-beta.1
 
 - **Add** `useComputed`
 
