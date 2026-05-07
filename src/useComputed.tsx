@@ -51,29 +51,40 @@ const subscribeToDependency = (
   dependency: Dependency,
   fn: (value: any) => void
 ) => {
-  if (Array.isArray(dependency)) {
-    const [store, path] = dependency;
-    store.__addSubscriber__(fn, path as never, { skipMountTracking: true });
-    return () => store.__removeSubscriber__(fn);
+  const [target, path] = Array.isArray(dependency)
+    ? dependency
+    : [dependency, undefined];
+
+  // Only WatcherStore has a mount lifecycle, so only it accepts skipMountTracking.
+  if ('onMount' in target) {
+    target.__addSubscriber__(fn, path as never, { skipMountTracking: true });
+  } else if (path !== undefined) {
+    target.__addSubscriber__(fn, path as never);
+  } else {
+    target.__addSubscriber__(fn);
   }
 
-  dependency.__addSubscriber__(fn, undefined, { skipMountTracking: true });
-  return () => dependency.__removeSubscriber__(fn);
+  return () => target.__removeSubscriber__(fn);
 };
 
 /**
- * React hook for managing nested object state with path-based subscriptions.
- * Components using `usePath` only re-render when their specific path changes.
+ * React hook that creates a read-only watcher whose state is derived from
+ * another watcher (a `WatcherStore`, `WatcherMap`, `WatcherPrimitive`, or a
+ * `[store, path]` tuple). The compute function runs whenever the dependency
+ * changes; subscribers are skipped when the new value is shallow-equal to
+ * the previous one.
  *
- * @param defaultValue - The initial state object
- * @returns A WatcherMap with getPath, setPath, usePath, watchPath, batch, etc.
+ * @param dependency - The watcher (or `[watcher, path]` tuple) to derive from
+ * @param computeFn - Maps the dependency's value to the computed value
+ * @returns A `WatcherComputed` exposing getState/getPath/useState/usePath/watchState/watchPath
  *
  * @example
- * const watcher = useWatcherMap<{ user: { name: string } }>({ user: { name: 'Alice' } });
- * // In a child component:
- * const name = watcher.usePath('user.name'); // only re-renders when name changes
- * // To update:
- * watcher.setPath('user.name', 'Bob');
+ * const store = watcherStore({ items: [{ type: 'fruit' }, { type: 'veg' }] });
+ * const veg = useComputed([store, 'items'], items =>
+ *   items.filter(i => i.type === 'veg')
+ * );
+ * // In a component:
+ * const list = veg.useState();
  */
 export const useComputed = <T,>(
   dependency: Dependency,
