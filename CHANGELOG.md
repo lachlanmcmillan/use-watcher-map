@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 6.0.0 BETA
+
+- **Add** `useComputed`
+
+  `useComputed` creates a read-only derived watcher from a watcher dependency.
+  It can subscribe to an entire watcher or a specific path tuple, recalculates
+  when that dependency changes, and skips notifying subscribers when the derived
+  value is shallow-equal to the previous value.
+
+  ```typescript
+  const vegetables = useComputed([allItems, 'items'], items =>
+    items.filter(item => item.type === 'vegetables')
+  );
+
+  const hasVegetables = useComputed([allItems, 'items'], items =>
+    items.some(item => item.type === 'vegetables')
+  );
+  ```
+
 ## 5.2.0
 
 - **Add** `skipMountTracking` option to `watcherStore.__addSubscriber__`
@@ -8,6 +27,7 @@
   tracking by passing `{ skipMountTracking: true }`. These subscribers still
   receive state/path updates, but they no longer cause the store to mount or keep
   it mounted.
+
 
 ## 5.1.0
 
