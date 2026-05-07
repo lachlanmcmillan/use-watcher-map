@@ -24,15 +24,29 @@ export interface WatcherBase<T extends Record<string, any>> {
   usePath: <P extends PathOf<T>>(path: P) => TypeAtPath<T, P>;
   /**
    * watchState will call the supplied function when the state changes.
+   *
+   * Used for side-effects of state changes. *ONLY USE SPARINGLY*. It's easy
+   * to get into infinite update loops with this.
+   *
    * It uses a useEffect underneath to cleanup properly
    */
   watchState: (fn: (value: T) => void) => void;
-  /** watchPath will call the supplied function when the path changes */
+  /** watchPath will call the supplied function when the path changes
+   *
+   * Used for side-effects of state changes. *ONLY USE SPARINGLY*. It's easy
+   * to get into infinite update loops with this.
+   *
+   * It uses a useEffect underneath to cleanup properly
+   */
   watchPath: <P extends PathOf<T>>(
     path: P,
     fn: (value: TypeAtPath<T, P>) => void
   ) => void;
-  // internal fns, do not call directly, exported for testing */
+
+  /* --- internal fns, do not call directly, exported for testing  --- */
+
+  /** manually add a subscriber to the store.  */
   __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
+  /** manually remove a subscriber from the store */
   __removeSubscriber__: (fn: Function) => void;
 }
