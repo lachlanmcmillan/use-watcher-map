@@ -729,6 +729,80 @@ describe('watcherStore', () => {
       expect(onMountFn).toHaveBeenCalledTimes(1);
     });
 
+    test('usePath re-renders do not churn onMount/onUnmount', () => {
+      const store = watcherStore(initialState);
+      const onUnmountFn = mock(() => {});
+      const onMountFn = mock(() => onUnmountFn);
+
+      store.onMount(onMountFn);
+
+      const { rerender, unmount } = renderHook(() =>
+        store.usePath('filter')
+      );
+
+      // First render -> first subscriber added -> onMount fires once.
+      expect(onMountFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountFn).not.toHaveBeenCalled();
+
+      // Re-render multiple times. If subscribePathFactory returned a new fn
+      // each call, useSyncExternalStore would resubscribe (unsub + sub), and
+      // the 1->0->1 transitions would fire onUnmount/onMount each time.
+      rerender();
+      rerender();
+      rerender();
+
+      // Trigger a state update which also causes a re-render of the hook.
+      act(() => {
+        store.setPath('filter', 'completed');
+      });
+
+      expect(onMountFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountFn).not.toHaveBeenCalled();
+
+      // Unmount triggers the only real unsubscribe.
+      unmount();
+      expect(onUnmountFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('two consumers on the same path are tracked independently', () => {
+      const store = watcherStore(initialState);
+      const onUnmountFn = mock(() => {});
+      const onMountFn = mock(() => onUnmountFn);
+
+      store.onMount(onMountFn);
+
+      const a = renderHook(() => store.usePath('filter'));
+      const b = renderHook(() => store.usePath('filter'));
+
+      // First subscriber -> mount fires once. Second adds another entry
+      // without re-firing mount.
+      expect(onMountFn).toHaveBeenCalledTimes(1);
+
+      expect(a.result.current).toBe('all');
+      expect(b.result.current).toBe('all');
+
+      act(() => {
+        store.setPath('filter', 'completed');
+      });
+
+      // Both subscriptions are notified independently.
+      expect(a.result.current).toBe('completed');
+      expect(b.result.current).toBe('completed');
+
+      // Unmounting one consumer must not remove the other's subscription.
+      a.unmount();
+      expect(onUnmountFn).not.toHaveBeenCalled();
+
+      act(() => {
+        store.setPath('filter', 'active');
+      });
+      expect(b.result.current).toBe('active');
+
+      // Last consumer leaves -> 1->0 transition fires onUnmount.
+      b.unmount();
+      expect(onUnmountFn).toHaveBeenCalledTimes(1);
+    });
+
     test('onMount return value replaces previous onUnmount function', () => {
       const store = watcherStore(initialState);
       const firstOnUnmount = mock(() => {});

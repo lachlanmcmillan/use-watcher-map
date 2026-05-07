@@ -162,12 +162,21 @@ export const watcherStore = <T extends Record<string, any>>(
     return () => removeSubscriber(fn);
   };
 
+  // useSyncExternalStore re-subscribes whenever the subscribe fn identity
+  // changes, which would fire onMount/onUnmount on every render. Cache one
+  // subscribe fn per path so identity is stable across renders of the same
+  // usePath(path) call.
+  const pathSubscribers = new Map<string, (fn: Function) => () => void>();
   const subscribePathFactory = (path: string) => {
-    return (fn: Function) => {
-      addSubscriber(fn, path);
-
-      return () => removeSubscriber(fn);
-    };
+    let cached = pathSubscribers.get(path);
+    if (!cached) {
+      cached = (fn: Function) => {
+        addSubscriber(fn, path);
+        return () => removeSubscriber(fn);
+      };
+      pathSubscribers.set(path, cached);
+    }
+    return cached;
   };
 
   const getState = () => state;
@@ -176,11 +185,16 @@ export const watcherStore = <T extends Record<string, any>>(
     return getDeepPath(state, path.split('.'));
   };
 
-  // returns a function that always returns the same path, useful for useSyncExternalStore
+  // Cache one getSnapshot fn per path. useSyncExternalStore reads identity to
+  // detect changes; a fresh fn each render forces extra work.
+  const pathGetters = new Map<string, () => any>();
   const getPathFactory = (path: string) => {
-    return (): any => {
-      return getDeepPath(state, path.split('.'));
-    };
+    let cached = pathGetters.get(path);
+    if (!cached) {
+      cached = (): any => getDeepPath(state, path.split('.'));
+      pathGetters.set(path, cached);
+    }
+    return cached;
   };
 
   const batch = (fn: () => void) => {
