@@ -460,7 +460,7 @@ describe('watcherStore', () => {
       const store = watcherStore(initialState);
       const mockFn = mock(() => {});
 
-      store.__addSubscriber__(mockFn, 'completed');
+      store.__addSubscriber__(mockFn, 'completed' as any);
 
       store.setPath('todos.1.completed', true);
 
@@ -475,20 +475,20 @@ describe('watcherStore', () => {
       const mockFn = mock(() => {});
 
       // Watch a path that doesn't exist in the initial state
-      store.__addSubscriber__(mockFn, 'settings.theme');
+      store.__addSubscriber__(mockFn, 'settings.theme' as any);
 
       // Verify the path doesn't exist initially
-      expect(store.getPath('settings.theme')).toBeUndefined();
+      expect(store.getPath('settings.theme' as any)).toBeUndefined();
 
       // Set the non-existent path
-      store.setPath('settings.theme', 'dark');
+      store.setPath('settings.theme' as any, 'dark');
 
       // The watcher should be called with the new value
       expect(mockFn).toHaveBeenCalledTimes(1);
       expect(mockFn).toHaveBeenCalledWith('dark');
 
       // Verify the path now exists with the correct value
-      expect(store.getPath('settings.theme')).toBe('dark');
+      expect(store.getPath('settings.theme' as any)).toBe('dark');
     });
   });
 
@@ -606,6 +606,80 @@ describe('watcherStore', () => {
       store.__addSubscriber__(mockSubscriber, 'todos.0.completed');
 
       expect(onMountFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('skipMountTracking subscriber does not call onMount', () => {
+      const store = watcherStore(initialState);
+      const onMountFn = mock(() => {});
+
+      store.onMount(onMountFn);
+
+      const mockSubscriber = mock(() => {});
+      store.__addSubscriber__(mockSubscriber, undefined, {
+        skipMountTracking: true,
+      });
+
+      expect(onMountFn).not.toHaveBeenCalled();
+    });
+
+    test('tracked subscriber calls onMount after skipMountTracking subscriber', () => {
+      const store = watcherStore(initialState);
+      const onMountFn = mock(() => {});
+
+      store.onMount(onMountFn);
+
+      const skippedSubscriber = mock(() => {});
+      store.__addSubscriber__(skippedSubscriber, undefined, {
+        skipMountTracking: true,
+      });
+      expect(onMountFn).not.toHaveBeenCalled();
+
+      const trackedSubscriber = mock(() => {});
+      store.__addSubscriber__(trackedSubscriber);
+
+      expect(onMountFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('skipMountTracking subscriber does not keep store mounted', () => {
+      const store = watcherStore(initialState);
+      const onUnmountFn = mock(() => {});
+      const onMountFn = mock(() => onUnmountFn);
+
+      store.onMount(onMountFn);
+
+      const trackedSubscriber = mock(() => {});
+      const skippedSubscriber = mock(() => {});
+      store.__addSubscriber__(trackedSubscriber);
+      store.__addSubscriber__(skippedSubscriber, undefined, {
+        skipMountTracking: true,
+      });
+
+      store.__removeSubscriber__(trackedSubscriber);
+
+      expect(onMountFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('removing skipMountTracking subscriber does not call stale onUnmount', () => {
+      const store = watcherStore(initialState);
+      const onUnmountFn = mock(() => {});
+      const onMountFn = mock(() => onUnmountFn);
+
+      store.onMount(onMountFn);
+
+      const trackedSubscriber = mock(() => {});
+      store.__addSubscriber__(trackedSubscriber);
+      store.__removeSubscriber__(trackedSubscriber);
+      expect(onUnmountFn).toHaveBeenCalledTimes(1);
+
+      const skippedSubscriber = mock(() => {});
+      store.__addSubscriber__(skippedSubscriber, undefined, {
+        skipMountTracking: true,
+      });
+      store.__removeSubscriber__(skippedSubscriber);
+
+      expect(onMountFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountFn).toHaveBeenCalledTimes(1);
     });
 
     test('onUnmount is called when removing last path-specific subscriber', () => {

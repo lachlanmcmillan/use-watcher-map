@@ -1,18 +1,36 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import type { WatcherBase } from './watcherBase';
+import { PathOf } from './pathOf';
 
-export interface WatcherStore<T extends Record<string, any>> extends WatcherBase<T> {
+export interface WatcherStore<T extends Record<string, any>>
+  extends WatcherBase<T> {
   /**
    * onMount will call the supplied function when the store is mounted.
    *
-   * If the function returns a function, that function will be called when the
+   * ie. useState, usePath, watchState, watchPath is used within a component.
+   *
+   * If the mountFn returns a function, that function will be called when the
    * store is unmounted.
    *
    * Only one onMount function is kept, so calling onMount multiple times will
    * override the previous function.
    */
-  onMount: (fn: () => void) => void;
+  onMount: (mountFn: () => void) => void;
+
+  /**
+   * manually add a subscriber to the store.
+   *
+   * if you pass opts { skipMountTracking: true }, then this subscriber will not
+   * trigger the onMount fn.
+   */
+  __addSubscriber__: (
+    fn: Function,
+    path?: PathOf<T>,
+    opts?: { skipMountTracking?: boolean }
+  ) => void;
+  /** manually remove a subscriber from the store */
+  __removeSubscriber__: (fn: Function) => void;
 }
 
 /**
@@ -35,15 +53,29 @@ export const watcherStore = <T extends Record<string, any>>(
   defaultValue: T
 ): WatcherStore<T> => {
   let state = defaultValue;
-  let subscribers: { path?: string; fn: Function }[] = [];
+  let subscribers: {
+    path?: string;
+    fn: Function;
+    opts?: { skipMountTracking?: boolean };
+  }[] = [];
   let batchedUpdates: { value: T; paths: string[] }[] | null = null;
   let onMountFn: (() => void) | null = null;
   let onUnmountFn: any | null = null;
 
   // --- helper fns ---
 
-  const addSubscriber = (fn: Function, path?: string) => {
-    if (subscribers.length === 0 && typeof onMountFn === 'function') {
+  const addSubscriber = (
+    fn: Function,
+    path?: string,
+    opts?: { skipMountTracking?: boolean }
+  ) => {
+    const isFirstSubscriber =
+      subscribers.filter(s => !s.opts?.skipMountTracking).length === 0;
+    if (
+      !opts?.skipMountTracking &&
+      isFirstSubscriber &&
+      typeof onMountFn === 'function'
+    ) {
       const returnValue = onMountFn();
       if (typeof returnValue === 'function') {
         onUnmountFn = returnValue;
@@ -51,15 +83,23 @@ export const watcherStore = <T extends Record<string, any>>(
     }
 
     if (!subscribers.some(sub => sub.fn === fn)) {
-      subscribers.push({ path, fn });
+      subscribers.push({ path, fn, opts });
     }
   };
 
   const removeSubscriber = (fn: Function) => {
+    const removedSubscriber = subscribers.find(sub => sub.fn === fn);
     subscribers = subscribers.filter(sub => sub.fn !== fn);
 
-    if (subscribers.length === 0 && typeof onUnmountFn === 'function') {
+    const isLastSubscriber =
+      subscribers.filter(s => !s.opts?.skipMountTracking).length === 0;
+    if (
+      !removedSubscriber?.opts?.skipMountTracking &&
+      isLastSubscriber &&
+      typeof onUnmountFn === 'function'
+    ) {
       onUnmountFn();
+      onUnmountFn = null;
     }
   };
 
