@@ -6,11 +6,13 @@ import { SubPathArraysExample } from './views/SubPathArrays/SubPathArrays';
 import { SubPathExample } from './views/SubPath/SubPath';
 import classes from './App.module.css';
 import { WatcherStoreExample } from './views/WatcherStore/WatcherStore';
+import { ComputedExample } from './views/Computed/Computed';
 
 const tabs: { label: string; value: string }[] = [
   { label: 'Simple', value: 'simple' },
   { label: 'SubPath', value: 'subpath' },
   { label: 'SubPath Arrays', value: 'subpath-arrays' },
+  { label: 'Computed', value: 'computed' },
   { label: 'Watcher Store', value: 'watcher-store' },
 ];
 
@@ -34,6 +36,7 @@ export const App = () => {
         {tab === 'simple' && <Simple />}
         {tab === 'subpath' && <SubPathExample />}
         {tab === 'subpath-arrays' && <SubPathArraysExample />}
+        {tab === 'computed' && <ComputedExample />}
         {tab === 'watcher-store' && <WatcherStoreExample />}
       </div>
     </div>
