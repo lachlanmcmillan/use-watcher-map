@@ -505,7 +505,7 @@ describe('useWatcherMap', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});
 
-      result.current.__addSubscriber__(mockFn, 'completed');
+      result.current.__addSubscriber__(mockFn, 'completed' as any);
 
       act(() => {
         result.current.setPath('todos.1.completed', true);
@@ -522,14 +522,14 @@ describe('useWatcherMap', () => {
       const mockFn = mock(() => {});
 
       // Watch a path that doesn't exist in the initial state
-      result.current.__addSubscriber__(mockFn, 'settings.theme');
+      result.current.__addSubscriber__(mockFn, 'settings.theme' as any);
 
       // Verify the path doesn't exist initially
-      expect(result.current.getPath('settings.theme')).toBeUndefined();
+      expect(result.current.getPath('settings.theme' as any)).toBeUndefined();
 
       // Set the non-existent path
       act(() => {
-        result.current.setPath('settings.theme', 'dark');
+        result.current.setPath('settings.theme' as any, 'dark');
       });
 
       // The watcher should be called with the new value
@@ -537,7 +537,7 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenCalledWith('dark');
 
       // Verify the path now exists with the correct value
-      expect(result.current.getPath('settings.theme')).toBe('dark');
+      expect(result.current.getPath('settings.theme' as any)).toBe('dark');
     });
   });
 
