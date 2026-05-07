@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 5.2.0
+
+- **Add** `skipMountTracking` option to `watcherStore.__addSubscriber__`
+
+  Internal subscribers can now opt out of `onMount` / `onUnmount` lifecycle
+  tracking by passing `{ skipMountTracking: true }`. These subscribers still
+  receive state/path updates, but they no longer cause the store to mount or keep
+  it mounted.
+
 ## 5.1.0
 
 - **Rewrite README** with full API reference, code examples, quick start guide, and comparison table
