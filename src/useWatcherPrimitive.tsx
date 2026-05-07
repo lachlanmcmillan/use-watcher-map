@@ -12,8 +12,12 @@ export interface WatcherPrimitive<T extends unknown> {
    * It uses a useEffect underneath to cleanup properly
    */
   watchState: (fn: (value: T) => void) => void;
-  // internal fns, do not call directly, exported for testing
+
+  /* --- internal fns, do not call directly, exported for testing --- */
+
+  /** manually add a subscriber to the store */
   __addSubscriber__: (fn: Function) => void;
+  /** manually remove a subscriber from the store */
   __removeSubscriber__: (fn: Function) => void;
 }
 

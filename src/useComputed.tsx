@@ -23,6 +23,9 @@ export interface WatcherComputed<T> {
   watchState: (fn: (value: T) => void) => void;
   /** watchPath will call the supplied function when the computed path changes */
   watchPath: (path: string, fn: (value: any) => void) => void;
+
+  /* --- internal fns, do not call directly, exported for testing --- */
+
   /** manually add a subscriber to the computed store */
   __addSubscriber__: (fn: Function, path?: string) => void;
   /** manually remove a subscriber from the computed store */

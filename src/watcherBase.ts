@@ -42,11 +42,4 @@ export interface WatcherBase<T extends Record<string, any>> {
     path: P,
     fn: (value: TypeAtPath<T, P>) => void
   ) => void;
-
-  /* --- internal fns, do not call directly, exported for testing  --- */
-
-  /** manually add a subscriber to the store.  */
-  __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
-  /** manually remove a subscriber from the store */
-  __removeSubscriber__: (fn: Function) => void;
 }

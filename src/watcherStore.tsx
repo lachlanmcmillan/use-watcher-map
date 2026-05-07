@@ -18,6 +18,8 @@ export interface WatcherStore<T extends Record<string, any>>
    */
   onMount: (mountFn: () => void) => void;
 
+  /* --- internal fns, do not call directly, exported for testing --- */
+
   /**
    * manually add a subscriber to the store.
    *

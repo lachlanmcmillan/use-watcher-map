@@ -6,10 +6,18 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
+import { PathOf } from './pathOf';
 import { WatcherBase } from './watcherBase';
 
 export interface WatcherMap<T extends Record<string, any>>
-  extends WatcherBase<T> {}
+  extends WatcherBase<T> {
+  /* --- internal fns, do not call directly, exported for testing  --- */
+
+  /** manually add a subscriber to the store */
+  __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
+  /** manually remove a subscriber from the store */
+  __removeSubscriber__: (fn: Function) => void;
+}
 
 /**
  * React hook for managing nested object state with path-based subscriptions.
