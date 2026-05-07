@@ -5,16 +5,29 @@ import {
   useRef,
   useSyncExternalStore,
 } from 'react';
-import { getDeepPath } from './object';
-import { WatcherBase } from './watcherBase';
+import { getDeepPath, isShallowEqual } from './object';
 import { WatcherStore } from './watcherStore';
 import { WatcherMap } from './useWatcherMap';
 import { WatcherPrimitive } from './useWatcherPrimitive';
 
-export type WatcherComputed<T extends Record<string, any>> = Omit<
-  WatcherBase<T>,
-  'batch' | 'setState' | 'setPath' | 'clearPath'
->;
+export interface WatcherComputed<T> {
+  /** get the entire computed state */
+  getState: () => T;
+  /** get a specific path from the computed state */
+  getPath: (path: string) => any;
+  /** useState will re-render the component when the computed state changes */
+  useState: () => T;
+  /** usePath will re-render the component when the specified path changes */
+  usePath: (path: string) => any;
+  /** watchState will call the supplied function when the computed state changes */
+  watchState: (fn: (value: T) => void) => void;
+  /** watchPath will call the supplied function when the computed path changes */
+  watchPath: (path: string, fn: (value: any) => void) => void;
+  /** manually add a subscriber to the computed store */
+  __addSubscriber__: (fn: Function, path?: string) => void;
+  /** manually remove a subscriber from the computed store */
+  __removeSubscriber__: (fn: Function) => void;
+}
 
 type Dependency =
   | WatcherStore<any>
@@ -59,7 +72,7 @@ const subscribeToDependency = (
  * // To update:
  * watcher.setPath('user.name', 'Bob');
  */
-export const useComputed = <T extends Record<string, any>>(
+export const useComputed = <T,>(
   dependency: Dependency,
   computeFn: (value: any) => T
 ): WatcherComputed<T> => {
@@ -140,8 +153,17 @@ export const useComputed = <T extends Record<string, any>>(
   useEffect(() => {
     const updateComputed = (dependencyValue: any) => {
       const nextState = computeFn(dependencyValue);
+      // isShallowEqual treats arrays like objects with numeric keys.
+      // const before = [lettuce];
+      // const after = [lettuce];
+      // before !== after; // true
+      // before[0] === after[0]; // true
+      if (isShallowEqual(state.current, nextState)) {
+        return;
+      }
+
       state.current = nextState;
-      notifySubscribers(nextState, Object.keys(nextState));
+      notifySubscribers(nextState, Object.keys(Object(nextState)));
     };
 
     return subscribeToDependency(dependency, updateComputed);

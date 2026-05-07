@@ -2,6 +2,7 @@ import {
   setDeepPathClone,
   getDeepPath,
   deleteDeepPathClone,
+  isShallowEqual,
 } from '../src/object';
 import { describe, it, expect } from 'bun:test';
 
@@ -202,6 +203,120 @@ describe('getDeepPath', () => {
     expect(
       getDeepPath(obj, ['nonexistent', 'deeply', 'nested', 'path'])
     ).toBeUndefined();
+  });
+});
+
+describe('isShallowEqual', () => {
+  it('should return true for values that are Object.is equal', () => {
+    const object = { a: 1 };
+    const array = [1, 2];
+
+    expect(isShallowEqual(object, object)).toBe(true);
+    expect(isShallowEqual(array, array)).toBe(true);
+    expect(isShallowEqual('value', 'value')).toBe(true);
+    expect(isShallowEqual(1, 1)).toBe(true);
+    expect(isShallowEqual(true, true)).toBe(true);
+    expect(isShallowEqual(null, null)).toBe(true);
+    expect(isShallowEqual(undefined, undefined)).toBe(true);
+    expect(isShallowEqual(NaN, NaN)).toBe(true);
+  });
+
+  it('should preserve Object.is semantics for signed zero', () => {
+    expect(isShallowEqual(0, -0)).toBe(false);
+    expect(isShallowEqual({ value: 0 }, { value: -0 })).toBe(false);
+  });
+
+  it('should return false when only one side is null or undefined', () => {
+    expect(isShallowEqual(null, undefined)).toBe(false);
+    expect(isShallowEqual(null, {})).toBe(false);
+    expect(isShallowEqual({}, null)).toBe(false);
+    expect(isShallowEqual(undefined, {})).toBe(false);
+    expect(isShallowEqual({}, undefined)).toBe(false);
+  });
+
+  it('should return false for non-Object.is primitive differences', () => {
+    expect(isShallowEqual(1, 2)).toBe(false);
+    expect(isShallowEqual('1', 1)).toBe(false);
+    expect(isShallowEqual(false, true)).toBe(false);
+    expect(isShallowEqual(Symbol.for('a'), Symbol.for('b'))).toBe(false);
+  });
+
+  it('should return false when one side is primitive and the other is object-like', () => {
+    expect(isShallowEqual(1, { value: 1 })).toBe(false);
+    expect(isShallowEqual('value', ['value'])).toBe(false);
+    expect(isShallowEqual(false, { value: false })).toBe(false);
+  });
+
+  it('should return true for objects with the same own enumerable keys and Object.is equal values', () => {
+    expect(isShallowEqual({ a: 1, b: 'two' }, { b: 'two', a: 1 })).toBe(true);
+    expect(isShallowEqual({ a: NaN }, { a: NaN })).toBe(true);
+  });
+
+  it('should return false for objects with different key counts', () => {
+    expect(isShallowEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(isShallowEqual({ a: 1, b: 2 }, { a: 1 })).toBe(false);
+  });
+
+  it('should return false for objects with different keys', () => {
+    expect(isShallowEqual({ a: 1 }, { b: 1 })).toBe(false);
+  });
+
+  it('should return false for objects with the same keys but different values', () => {
+    expect(isShallowEqual({ a: 1 }, { a: 2 })).toBe(false);
+    expect(isShallowEqual({ a: '1' }, { a: 1 })).toBe(false);
+  });
+
+  it('should compare nested object values by reference only', () => {
+    const nested = { count: 1 };
+
+    expect(isShallowEqual({ nested }, { nested })).toBe(true);
+    expect(isShallowEqual({ nested: { count: 1 } }, { nested: { count: 1 } })).toBe(
+      false
+    );
+  });
+
+  it('should ignore non-enumerable properties', () => {
+    const left = { a: 1 };
+    const right = { a: 1 };
+
+    Object.defineProperty(left, 'hidden', {
+      value: 1,
+      enumerable: false,
+    });
+    Object.defineProperty(right, 'hidden', {
+      value: 2,
+      enumerable: false,
+    });
+
+    expect(isShallowEqual(left, right)).toBe(true);
+  });
+
+  it('should require matching values to be own properties on the right side', () => {
+    const right = Object.create({ a: 1 });
+
+    expect(isShallowEqual({ a: 1 }, right)).toBe(false);
+  });
+
+  it('should compare arrays by enumerable indices and element references', () => {
+    const item = { id: 1 };
+
+    expect(isShallowEqual([1, 'two'], [1, 'two'])).toBe(true);
+    expect(isShallowEqual([item], [item])).toBe(true);
+    expect(isShallowEqual([{ id: 1 }], [{ id: 1 }])).toBe(false);
+    expect(isShallowEqual([1], [1, 2])).toBe(false);
+    expect(isShallowEqual([1, 2], [2, 1])).toBe(false);
+  });
+
+  it('should distinguish sparse array holes from explicit undefined values', () => {
+    const sparse = Array(1);
+    const explicitUndefined = [undefined];
+
+    expect(isShallowEqual(sparse, Array(1))).toBe(true);
+    expect(isShallowEqual(sparse, explicitUndefined)).toBe(false);
+  });
+
+  it('should compare arrays and objects by enumerable keys regardless of prototype', () => {
+    expect(isShallowEqual(['a'], { 0: 'a' })).toBe(true);
   });
 });
 

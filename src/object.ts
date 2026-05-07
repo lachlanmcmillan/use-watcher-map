@@ -90,7 +90,7 @@ function copyObj(obj: any): any {
  * console.log(result) // 'apples'
  */
 export const getDeepPath = (
-  obj: Record<any, any> | undefined | null,
+  obj: unknown,
   paths: string[]
 ): any => {
   // Handle undefined or null objects
@@ -98,12 +98,48 @@ export const getDeepPath = (
     return undefined;
   }
 
+  if (typeof obj !== 'object' && typeof obj !== 'function') {
+    return undefined;
+  }
+
   const [first, ...rest] = paths;
-  const result = obj[first];
+  const result = (obj as Record<any, any>)[first];
   if (rest.length === 0) {
     return result;
   }
   return getDeepPath(result, rest);
+};
+
+export const isShallowEqual = (left: unknown, right: unknown) => {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (
+    typeof left !== 'object' ||
+    left === null ||
+    typeof right !== 'object' ||
+    right === null
+  ) {
+    return false;
+  }
+
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+
+  return leftKeys.every(key => {
+    return (
+      Object.prototype.hasOwnProperty.call(right, key) &&
+      Object.is(
+        (left as Record<string, unknown>)[key],
+        (right as Record<string, unknown>)[key]
+      )
+    );
+  });
 };
 
 /**

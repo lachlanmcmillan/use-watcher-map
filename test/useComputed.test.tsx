@@ -172,6 +172,51 @@ describe('useComputed', () => {
     expect(computeFn).toHaveBeenCalledTimes(2);
   });
 
+  test('do not notify subscribers when filtered computed array is unchanged', () => {
+    const store = watcherStore({
+      items: [
+        { type: 'fruits', name: 'apple' },
+        { type: 'vegetables', name: 'lettuce' },
+      ],
+    });
+
+    const { result } = renderHook(() =>
+      useComputed([store, 'items'], items =>
+        items.filter(
+          (item: { type: string; name: string }) => item.type === 'vegetables'
+        )
+      )
+    );
+    const subscriber = mock(() => {});
+
+    result.current.__addSubscriber__(subscriber);
+
+    act(() => {
+      store.setPath('items', [
+        ...store.getPath('items'),
+        { type: 'fruits', name: 'banana' },
+      ]);
+    });
+
+    expect(result.current.getState()).toEqual([
+      { type: 'vegetables', name: 'lettuce' },
+    ]);
+    expect(subscriber).not.toHaveBeenCalled();
+
+    act(() => {
+      store.setPath('items', [
+        ...store.getPath('items'),
+        { type: 'vegetables', name: 'carrot' },
+      ]);
+    });
+
+    expect(result.current.getState()).toEqual([
+      { type: 'vegetables', name: 'lettuce' },
+      { type: 'vegetables', name: 'carrot' },
+    ]);
+    expect(subscriber).toHaveBeenCalledTimes(1);
+  });
+
   test('support primitive dependencies', () => {
     const { result } = renderHook(() => {
       const count = useWatcher(2);
@@ -187,6 +232,51 @@ describe('useComputed', () => {
     });
 
     expect(result.current.computed.getState()).toEqual({ doubled: 14 });
+  });
+
+  test('support primitive computed values', () => {
+    const store = watcherStore({
+      items: [
+        { type: 'fruits', name: 'apple' },
+        { type: 'vegetables', name: 'lettuce' },
+      ],
+    });
+
+    const { result } = renderHook(() =>
+      useComputed([store, 'items'], items =>
+        items.some(
+          (item: { type: string; name: string }) => item.type === 'vegetables'
+        )
+      )
+    );
+    const subscriber = mock(() => {});
+
+    result.current.__addSubscriber__(subscriber);
+
+    expect(result.current.getState()).toBe(true);
+
+    act(() => {
+      store.setPath('items', [
+        ...store.getPath('items'),
+        { type: 'fruits', name: 'banana' },
+      ]);
+    });
+
+    expect(result.current.getState()).toBe(true);
+    expect(subscriber).not.toHaveBeenCalled();
+
+    act(() => {
+      store.setPath(
+        'items',
+        store
+          .getPath('items')
+          .filter((item: { type: string }) => item.type !== 'vegetables')
+      );
+    });
+
+    expect(result.current.getState()).toBe(false);
+    expect(subscriber).toHaveBeenCalledTimes(1);
+    expect(subscriber).toHaveBeenCalledWith(false);
   });
 
   test('unsubscribe from the dependency when the computed hook unmounts', () => {
