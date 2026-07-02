@@ -1,5 +1,57 @@
 # CHANGELOG
 
+## 6.0.0-beta.3
+
+- **Breaking** `useComputed` dependency shape - `[store, path]` tuple -> `{ watcher, path }` object
+
+  The tuple form is replaced by an explicit `PathSubscription` object. Update
+  `useComputed([store, 'items'], fn)` to `useComputed({ watcher: store, path: 'items' }, fn)`.
+
+- **New** `useComputed` accepts an array of dependencies
+
+  `computeFn` receives an array of values, in order, and recomputes when any 
+  one changes.
+
+  ```typescript
+  const sum = useComputed([storeA, storeB], ([a, b]) => ({
+    sum: a.count + b.count,
+  }));
+  ```
+
+- **New** `prev` argument to `computeFn`
+
+  `computeFn` now receives `(value, prev)`, where `prev` is the previously
+  computed value (`undefined` on the first run). If you return `prev` then
+  nothing will be updated.
+
+  This lets you return `prev` when you don't want the computed to update, 
+  giving better control over renders.
+
+  ```typescript
+  const itemsById = useComputed(
+    { watcher: store, path: 'items' },
+    (items, prev) => {
+      const next = new Map(items.map(i => [i.id, i]));
+      // a bare Map can't be diffed by isShallowEqual, so wrap it and compare
+      // entries against prev ourselves
+      const prevMap = prev?.map;
+      const isUnchanged =
+        prevMap !== undefined &&
+        next.size === prevMap.size &&
+        [...next].every(([k, v]) => prevMap.get(k) === v);
+      return isUnchanged ? prev : { map: next };
+    }
+  );
+  ```
+
+- **New** `WatcherComputed` as a dependency
+
+  A computed can now derive from another computed, either as a whole-value
+  dependency or via `{ watcher: computed, path }`.
+
+- **Docs** document the skip-on-shallow-equal behavior on `useComputed` and
+  `isShallowEqual` (top-level reference comparison; use `prev` for deeper changes).
+
 ## 6.0.0-beta.2
 
 - **Fix** `usePath` causing repeated `onMount` / `onUnmount` calls
@@ -43,7 +95,6 @@
   receive state/path updates, but they no longer cause the store to mount or keep
   it mounted.
 
-
 ## 5.1.0
 
 - **Rewrite README** with full API reference, code examples, quick start guide, and comparison table
@@ -60,32 +111,32 @@
 All path-based methods now know what type is being set or returned!
 
 ```typescript
-  interface UserState {
-    user: {
-      name: string;
-      address: {
-        street: string;
-        city: string;
-      };
+interface UserState {
+  user: {
+    name: string;
+    address: {
+      street: string;
+      city: string;
     };
-    settings: {
-      theme: 'light' | 'dark';
-    };
-  }
+  };
+  settings: {
+    theme: 'light' | 'dark';
+  };
+}
 
-  const store = useWatcherStore<UserState>({
-    /* ... */
-  });
+const store = useWatcherStore<UserState>({
+  /* ... */
+});
 
-  // TypeScript autocomplete and validation
-  store.getPath('user.name'); // string 
-  store.setPath('user.address.city', 'NYC'); // string
-  store.usePath('settings.theme'); // 'light' | 'dark'
+// TypeScript autocomplete and validation
+store.getPath('user.name'); // string
+store.setPath('user.address.city', 'NYC'); // string
+store.usePath('settings.theme'); // 'light' | 'dark'
 
-  // TypeScript errors for invalid paths
-  store.setPath('user.name', 12345); // ❌ Error: invalid argument
-  store.setPath('user.address.city', true); // ❌ Error: invalid argument
-  ```
+// TypeScript errors for invalid paths
+store.setPath('user.name', 12345); // ❌ Error: invalid argument
+store.setPath('user.address.city', true); // ❌ Error: invalid argument
+```
 
 ## 4.0.1
 
