@@ -153,6 +153,51 @@ function ThemeToggle() {
 
 ---
 
+### `useComputed<T>(dependency, computeFn): WatcherComputed<T>`
+
+Read-only derived watcher. `computeFn` runs when dependencies change.
+
+- `dependency`: watcher (`WatcherStore` / `WatcherMap` / `WatcherPrimitive` / `WatcherComputed`), `{ watcher, path }`, or an array of these (array → `computeFn` receives an array of values)
+- **WARNING** — skips update when new result is shallow-equal to previous state (`isShallowEqual`, top-level ref only):
+  - `isShallowEqual(['apples'], ['apples'])` // true
+  - `isShallowEqual([{ a: 1 }], [{ a: 1 }])` // false
+  - equivalent to a deep-equality check only a single level deep
+  - to skip manually: return `prev` from `computeFn` (ref equality = no notify)
+
+```tsx
+const store = watcherStore({ items: [{ type: 'fruit' }, { type: 'veg' }] });
+
+const veg = useComputed({ watcher: store, path: 'items' }, (items, _prev) =>
+  items.filter(i => i.type === 'veg')
+);
+
+function VegList() {
+  const items = veg.useState();
+  return <ul>{items.map(i => <li key={i.name}>{i.name}</li>)}</ul>;
+}
+```
+
+```tsx
+// return prev → skip notify (for deep changes the shallow check misses)
+const names = useComputed({ watcher: store, path: 'items' }, (items, prev) => {
+  const next = [...new Set(items.map(x => x.name))];
+  return deepEqual(next, prev) ? prev : next;
+});
+```
+
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+| `getState()` | Get the entire computed value |
+| `getPath(path)` | Get value at a specific path of the computed value |
+| `useState()` | React hook — re-renders when the computed value changes |
+| `usePath(path)` | React hook — re-renders only when the specified path of the computed value changes |
+| `watchState(fn)` | Side-effect listener for any computed change (useEffect-based) |
+| `watchPath(path, fn)` | Side-effect listener for a specific path (useEffect-based) |
+
+---
+
 ## Path System
 
 Paths use dot-notation strings to reference nested values: `"user.name"`, `"todos.0.completed"`, `"settings.theme"`.
@@ -216,7 +261,7 @@ function Logger({ watcher }: { watcher: WatcherMap<State> }) {
 ## Utility Types
 
 ```typescript
-import type { PathOf, TypeAtPath, WatcherMap, WatcherPrimitive, WatcherStore } from 'use-watcher-map';
+import type { PathOf, TypeAtPath, WatcherMap, WatcherPrimitive, WatcherStore, WatcherComputed } from 'use-watcher-map';
 ```
 
 | Type | Description |
@@ -226,6 +271,7 @@ import type { PathOf, TypeAtPath, WatcherMap, WatcherPrimitive, WatcherStore } f
 | `WatcherMap<T>` | Return type of `useWatcherMap` |
 | `WatcherPrimitive<T>` | Return type of `useWatcher` |
 | `WatcherStore<T>` | Return type of `watcherStore` |
+| `WatcherComputed<T>` | Return type of `useComputed` |
 
 ---
 
@@ -237,6 +283,7 @@ This repository includes an interactive example app in `example/` demonstrating:
 - **SubPath**: Watching specific nested paths
 - **SubPath Arrays**: Handling arrays within watched paths
 - **WatcherStore**: Global store usage
+- **Computed**: Derived state with skip-on-shallow-equal re-renders
 
 ```bash
 bun install

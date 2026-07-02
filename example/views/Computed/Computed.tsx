@@ -28,7 +28,7 @@ const fruitNames = ['apple', 'banana', 'pear', 'orange'];
 const vegetableNames = ['lettuce', 'carrot', 'broccoli', 'spinach'];
 
 export function ComputedExample() {
-  const allItems = useWatcherMap<State>({
+  const $allItems = useWatcherMap<State>({
     items: [
       { id: 1, type: 'fruits', name: 'apple' },
       { id: 2, type: 'vegetables', name: 'lettuce' },
@@ -36,56 +36,73 @@ export function ComputedExample() {
     nextId: 3,
   });
 
-  const vegetables = useComputed([allItems, 'items'], (items: Item[]) =>
-    items.filter(item => item.type === 'vegetables')
+  const $vegetables = useComputed(
+    { watcher: $allItems, path: 'items' },
+    (items: Item[]) => items.filter(item => item.type === 'vegetables')
   );
 
-  const hasVegetables = useComputed([allItems, 'items'], (items: Item[]) =>
-    items.some(item => item.type === 'vegetables')
+  const $hasVegetables = useComputed(
+    $vegetables,
+    (vegetables: Item[]) => vegetables.length > 0
   );
 
-  const itemStats = useComputed([allItems, 'items'], (items: Item[]) => {
-    const fruitCount = items.filter(item => item.type === 'fruits').length;
-    const vegetableCount = items.filter(
-      item => item.type === 'vegetables'
-    ).length;
-    const dominantType: ItemStats['dominantType'] =
-      items.length === 0
-        ? 'empty'
-        : fruitCount === vegetableCount
-          ? 'balanced'
-          : fruitCount > vegetableCount
-            ? 'fruits'
-            : 'vegetables';
+  const $hasFruits = useComputed(
+    { watcher: $allItems, path: 'items' },
+    (items: Item[]) => items.some(item => item.type === 'fruits')
+  );
 
-    return {
-      total: items.length,
-      fruitCount,
-      vegetableCount,
-      vegetableSummary: `${vegetableCount} vegetable${vegetableCount === 1 ? '' : 's'}`,
-      dominantType,
-    };
-  });
+  // you can watch multiple computed values at once by passing an array of
+  // watchers
+  const $hasHealthyDiet = useComputed(
+    [$hasVegetables, $hasFruits],
+    ([hasVegetables, hasFruits]) => hasVegetables && hasFruits
+  );
+
+  const $itemStats = useComputed(
+    { watcher: $allItems, path: 'items' },
+    (items: Item[]) => {
+      const fruitCount = items.filter(item => item.type === 'fruits').length;
+      const vegetableCount = items.filter(
+        item => item.type === 'vegetables'
+      ).length;
+      const dominantType: ItemStats['dominantType'] =
+        items.length === 0
+          ? 'empty'
+          : fruitCount === vegetableCount
+            ? 'balanced'
+            : fruitCount > vegetableCount
+              ? 'fruits'
+              : 'vegetables';
+
+      return {
+        total: items.length,
+        fruitCount,
+        vegetableCount,
+        vegetableSummary: `${vegetableCount} vegetable${vegetableCount === 1 ? '' : 's'}`,
+        dominantType,
+      };
+    }
+  );
 
   const addItem = (type: ItemType) => {
-    const items = allItems.getPath('items');
-    const nextId = allItems.getPath('nextId');
+    const items = $allItems.getPath('items');
+    const nextId = $allItems.getPath('nextId');
     const names = type === 'fruits' ? fruitNames : vegetableNames;
     const name = names[nextId % names.length];
 
-    allItems.setPath('items', [...items, { id: nextId, type, name }]);
-    allItems.setPath('nextId', nextId + 1);
+    $allItems.setPath('items', [...items, { id: nextId, type, name }]);
+    $allItems.setPath('nextId', nextId + 1);
   };
 
   const removeItem = (type: ItemType) => {
-    const items = allItems.getPath('items');
+    const items = $allItems.getPath('items');
     const index = items.findIndex(item => item.type === type);
 
     if (index === -1) {
       return;
     }
 
-    allItems.setPath(
+    $allItems.setPath(
       'items',
       items.filter((_, itemIndex) => itemIndex !== index)
     );
@@ -96,12 +113,13 @@ export function ComputedExample() {
       <h2>Computed Example</h2>
 
       <p className={classes.description}>
-        A computed store subscribes to <code>[allItems, 'items']</code> and
-        filters the list to vegetables. The vegetables view only re-renders
-        when the filtered vegetable result changes.
+        A computed store subscribes to{' '}
+        <code>{`{ watcher: allItems, path: 'items' }`}</code> and filters the
+        list to vegetables. The vegetables view only re-renders when the
+        filtered vegetable result changes.
       </p>
 
-      <WatchingState watcher={allItems} />
+      <WatchingState watcher={$allItems} />
 
       <div className={classes.buttonContainer}>
         <button onClick={() => addItem('fruits')}>Add Fruit</button>
@@ -113,11 +131,12 @@ export function ComputedExample() {
       </div>
 
       <div className={classes.columns}>
-        <AllItems watcher={allItems} />
+        <AllItems $allItems={$allItems} />
         <div className={classes.computedColumn}>
-          <Vegetables vegetables={vegetables} />
-          <HasVegetables hasVegetables={hasVegetables} />
-          <VegetableSummary stats={itemStats} />
+          <Vegetables $vegetables={$vegetables} />
+          <HasVegetables hasVegetables={$hasVegetables} />
+          <HasHealtyDiet $hasHealthyDiet={$hasHealthyDiet} />
+          <VegetableSummary $stats={$itemStats} />
         </div>
       </div>
     </div>
@@ -136,8 +155,8 @@ const WatchingState = ({ watcher }: { watcher: WatcherMap<State> }) => {
   );
 };
 
-const AllItems = ({ watcher }: { watcher: WatcherMap<State> }) => {
-  const items = watcher.usePath('items');
+const AllItems = ({ $allItems }: { $allItems: WatcherMap<State> }) => {
+  const items = $allItems.usePath('items');
 
   return (
     <section>
@@ -150,11 +169,11 @@ const AllItems = ({ watcher }: { watcher: WatcherMap<State> }) => {
 };
 
 const Vegetables = ({
-  vegetables,
+  $vegetables,
 }: {
-  vegetables: WatcherComputed<Item[]>;
+  $vegetables: WatcherComputed<Item[]>;
 }) => {
-  const items = vegetables.useState();
+  const items = $vegetables.useState();
 
   return (
     <section>
@@ -185,8 +204,31 @@ const HasVegetables = ({
   );
 };
 
-const VegetableSummary = ({ stats }: { stats: WatcherComputed<ItemStats> }) => {
-  const label = stats.usePath('vegetableSummary');
+const HasHealtyDiet = ({
+  $hasHealthyDiet,
+}: {
+  $hasHealthyDiet: WatcherComputed<boolean>;
+}) => {
+  const value = $hasHealthyDiet.useState();
+
+  return (
+    <section>
+      <h3>Computed Boolean</h3>
+      <RerenderIndicator>
+        <p className={classes.booleanValue}>
+          hasHealthyDiet: <strong>{String(value)}</strong>
+        </p>
+      </RerenderIndicator>
+    </section>
+  );
+};
+
+const VegetableSummary = ({
+  $stats,
+}: {
+  $stats: WatcherComputed<ItemStats>;
+}) => {
+  const label = $stats.usePath('vegetableSummary');
 
   return (
     <section>

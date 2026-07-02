@@ -32,27 +32,60 @@ export interface WatcherComputed<T> {
   __removeSubscriber__: (fn: Function) => void;
 }
 
+type PathSubscription = {
+  watcher: WatcherStore<any> | WatcherMap<any> | WatcherComputed<any>;
+  path: string;
+};
+
 type Dependency =
   | WatcherStore<any>
   | WatcherMap<any>
   | WatcherPrimitive<any>
-  | [WatcherStore<any> | WatcherMap<any>, string];
+  | WatcherComputed<any>
+  | PathSubscription;
 
-const getDependencyValue = (dependency: Dependency) => {
+const isPathSubscription = (
+  dependency: Dependency
+): dependency is PathSubscription => {
+  return (
+    Object.keys(dependency).length === 2 &&
+    'watcher' in dependency &&
+    'path' in dependency
+  );
+};
+
+const getDependencyValue = (
+  dependency: Dependency | Dependency[]
+): any | any[] => {
   if (Array.isArray(dependency)) {
-    const [store, path] = dependency;
-    return store.getPath(path as never);
+    return dependency.map(d => getDependencyValue(d));
+  }
+
+  if (isPathSubscription(dependency)) {
+    return dependency.watcher.getPath(dependency.path);
   }
 
   return dependency.getState();
 };
 
 const subscribeToDependency = (
-  dependency: Dependency,
+  dependency: Dependency | Dependency[],
   fn: (value: any) => void
 ) => {
-  const [target, path] = Array.isArray(dependency)
-    ? dependency
+  if (Array.isArray(dependency)) {
+    let unsubscribers = [];
+    for (const d of dependency) {
+      unsubscribers.push(subscribeToDependency(d, fn));
+    }
+    return () => {
+      for (const unsubscriber of unsubscribers) {
+        unsubscriber();
+      }
+    };
+  }
+
+  let [target, path] = isPathSubscription(dependency)
+    ? [dependency.watcher, dependency.path]
     : [dependency, undefined];
 
   // Only WatcherStore has a mount lifecycle, so only it accepts skipMountTracking.
@@ -68,29 +101,24 @@ const subscribeToDependency = (
 };
 
 /**
- * React hook that creates a read-only watcher whose state is derived from
- * another watcher (a `WatcherStore`, `WatcherMap`, `WatcherPrimitive`, or a
- * `[store, path]` tuple). The compute function runs whenever the dependency
- * changes; subscribers are skipped when the new value is shallow-equal to
- * the previous one.
+ * Read-only derived watcher. `computeFn` runs when dependencies change.
  *
- * @param dependency - The watcher (or `[watcher, path]` tuple) to derive from
- * @param computeFn - Maps the dependency's value to the computed value
- * @returns A `WatcherComputed` exposing getState/getPath/useState/usePath/watchState/watchPath
+ * **WARNING** - skips update when new result is shallow-equal to previous state.
+ * - isShallowEqual(['apples'], ['apples']) // true
+ * - isShallowEqual([{ a: 1 }], [{ a: 1 }]) // false
+ * - equivalent to a deep-equality check only a single level deep.
+ * - to skip manually: return `prev` from computeFn (ref equality = no notify)
  *
  * @example
- * const store = watcherStore({ items: [{ type: 'fruit' }, { type: 'veg' }] });
- * const veg = useComputed([store, 'items'], items =>
+ * const veg = useComputed({ watcher: store, path: 'items' }, (items, _prev) =>
  *   items.filter(i => i.type === 'veg')
  * );
- * // In a component:
- * const list = veg.useState();
  */
 export const useComputed = <T,>(
-  dependency: Dependency,
-  computeFn: (value: any) => T
+  dependency: Dependency | Dependency[],
+  computeFn: (value: any | any[], prev?: any | any[]) => T
 ): WatcherComputed<T> => {
-  const state = useRef(computeFn(getDependencyValue(dependency)));
+  const state = useRef(computeFn(getDependencyValue(dependency), undefined));
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
 
   // --- helper fns ---
@@ -165,13 +193,11 @@ export const useComputed = <T,>(
   }, []);
 
   useEffect(() => {
-    const updateComputed = (dependencyValue: any) => {
-      const nextState = computeFn(dependencyValue);
-      // isShallowEqual treats arrays like objects with numeric keys.
-      // const before = [lettuce];
-      // const after = [lettuce];
-      // before !== after; // true
-      // before[0] === after[0]; // true
+    const updateComputed = () => {
+      const nextState = computeFn(
+        getDependencyValue(dependency),
+        state.current
+      );
       if (isShallowEqual(state.current, nextState)) {
         return;
       }

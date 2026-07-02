@@ -110,6 +110,19 @@ export const getDeepPath = (
   return getDeepPath(result, rest);
 };
 
+/**
+ * Shallow equality: compares top-level keys/indices by referential identity
+ * (`Object.is`). Does not recurse into nested values.
+ *
+ * @example
+ * isShallowEqual(['apples'], ['apples'])     // true  — same 'apples' string reference
+ * isShallowEqual([1, 2], [1, 2])             // true  — primitives compared by Object.is
+ * isShallowEqual([1, 2], [1, 2, 3])          // false — different lengths
+ * isShallowEqual({ a: 1 }, { a: 1 })         // true  — primitive value, same key
+ * isShallowEqual({ a: {} }, { a: {} })       // false — nested objects differ by reference
+ * isShallowEqual([{ a: 1 }], [{ a: 1 }])     // false — element objects differ by reference
+ * isShallowEqual(null, null)                 // true
+ */
 export const isShallowEqual = (left: unknown, right: unknown) => {
   if (Object.is(left, right)) {
     return true;
