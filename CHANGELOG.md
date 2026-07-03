@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 6.0.0-beta.4
+
+- **New** `computedStore`
+
+  Adds a module-level, read-only computed store for deriving values from
+  `watcherStore` or other computed stores.
+
+  `computedStore` is lazy: direct `getState()` / `getPath()` reads compute from
+  current dependency values without subscribing, while `useState()`,
+  `usePath()`, `watchState()`, and `watchPath()` subscribe only while mounted.
+
 ## 6.0.0-beta.3
 
 - **Breaking** `useComputed` dependency shape - `[store, path]` tuple -> `{ watcher, path }` object
