@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import type { WatcherBase } from './watcherBase';
 import { PathOf } from './pathOf';
+import { getUniqueBatchedUpdates, notifyPathSubscribers } from './shared';
 
 export interface WatcherStore<T extends Record<string, any>>
   extends WatcherBase<T> {
@@ -118,44 +119,7 @@ export const watcherStore = <T extends Record<string, any>>(
       return;
     }
 
-    // each subscriber should only be called once
-    for (const subscriber of subscribers) {
-      // If the subscriber is watching a specific path (as opposed to the
-      // entire state)
-      if (subscriber.path) {
-        for (const notifyPath of paths) {
-          // first, check for exact and child matches
-          // eg. notifyPath = "todos.0.tags"
-          // we notify subscribers of exact matches "todos.0.tags", and
-          // sub-paths "todos.0.tags.0", "todos.0.tags.1", etc. but not
-          // siblings "todos.0.completed"
-          const childPathMatch = subscriber.path.startsWith(notifyPath);
-
-          if (childPathMatch) {
-            const pathValue = getDeepPath(value, subscriber.path.split('.'));
-            subscriber.fn(pathValue);
-            // we've notified this subscriber, so we can skip the rest of the paths
-            break;
-          }
-
-          // check for parent matches
-          // eg. notifyPath = "todos.0.tags"
-          // we notify subscribers of exact matches "todos.0.tags", and parents
-          // "todos.0", "todos"
-          const parentPathMatch = notifyPath.startsWith(subscriber.path);
-
-          if (parentPathMatch) {
-            const pathValue = getDeepPath(value, subscriber.path.split('.'));
-            subscriber.fn(pathValue);
-            break;
-          }
-        }
-      } else {
-        // If the subscriber is watching the entire state, then notify the
-        // subscriber with the complete state object
-        subscriber.fn(value);
-      }
-    }
+    notifyPathSubscribers(subscribers, value, paths);
   };
 
   const subscribe = (fn: Function) => {
@@ -206,13 +170,7 @@ export const watcherStore = <T extends Record<string, any>>(
     batchedUpdates = [];
     fn();
     // make a list of unique updates, take the last one for each path
-    const updates: { value: T; paths: string[] }[] = [];
-    for (let i = batchedUpdates.length - 1; i >= 0; i--) {
-      const update = batchedUpdates[i];
-      if (!updates.some(u => u.paths.every(p => update.paths.includes(p)))) {
-        updates.push(update);
-      }
-    }
+    const updates = getUniqueBatchedUpdates(batchedUpdates);
     batchedUpdates = null;
     updates.forEach(({ value, paths }) => notifySubscribers(value, paths));
   };

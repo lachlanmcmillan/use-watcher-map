@@ -6,6 +6,11 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { getDeepPath, isShallowEqual } from './object';
+import {
+  getDependencyValue,
+  notifyPathSubscribers,
+  subscribeToDependency,
+} from './shared';
 import { WatcherStore } from './watcherStore';
 import { WatcherMap } from './useWatcherMap';
 import { WatcherPrimitive } from './useWatcherPrimitive';
@@ -44,62 +49,6 @@ type Dependency =
   | WatcherComputed<any>
   | PathSubscription;
 
-const isPathSubscription = (
-  dependency: Dependency
-): dependency is PathSubscription => {
-  return (
-    Object.keys(dependency).length === 2 &&
-    'watcher' in dependency &&
-    'path' in dependency
-  );
-};
-
-const getDependencyValue = (
-  dependency: Dependency | Dependency[]
-): any | any[] => {
-  if (Array.isArray(dependency)) {
-    return dependency.map(d => getDependencyValue(d));
-  }
-
-  if (isPathSubscription(dependency)) {
-    return dependency.watcher.getPath(dependency.path);
-  }
-
-  return dependency.getState();
-};
-
-const subscribeToDependency = (
-  dependency: Dependency | Dependency[],
-  fn: (value: any) => void
-) => {
-  if (Array.isArray(dependency)) {
-    let unsubscribers = [];
-    for (const d of dependency) {
-      unsubscribers.push(subscribeToDependency(d, fn));
-    }
-    return () => {
-      for (const unsubscriber of unsubscribers) {
-        unsubscriber();
-      }
-    };
-  }
-
-  let [target, path] = isPathSubscription(dependency)
-    ? [dependency.watcher, dependency.path]
-    : [dependency, undefined];
-
-  // Only WatcherStore has a mount lifecycle, so only it accepts skipMountTracking.
-  if ('onMount' in target) {
-    target.__addSubscriber__(fn, path as never, { skipMountTracking: true });
-  } else if (path !== undefined) {
-    target.__addSubscriber__(fn, path as never);
-  } else {
-    target.__addSubscriber__(fn);
-  }
-
-  return () => target.__removeSubscriber__(fn);
-};
-
 /**
  * Read-only derived watcher. `computeFn` runs when dependencies change.
  *
@@ -133,51 +82,8 @@ export const useComputed = <T,>(
     subscribers.current = subscribers.current.filter(sub => sub.fn !== fn);
   }, []);
 
-  /**
-   * each path that's being updated should be a full path, not parts
-   *
-   * ✅ - ["todos.0.completed"]
-   * ❌ - ["todos", "todos.0", "todos.0.completed"]
-   */
   const notifySubscribers = (value: T, paths: string[]) => {
-    // each subscriber should only be called once
-    for (const subscriber of subscribers.current) {
-      // If the subscriber is watching a specific path (as opposed to the
-      // entire state)
-      if (subscriber.path) {
-        for (const notifyPath of paths) {
-          // first, check for exact and child matches
-          // eg. notifyPath = "todos.0.tags"
-          // we notify subscribers of exact matches "todos.0.tags", and
-          // sub-paths "todos.0.tags.0", "todos.0.tags.1", etc. but not
-          // siblings "todos.0.completed"
-          const childPathMatch = subscriber.path.startsWith(notifyPath);
-
-          if (childPathMatch) {
-            const pathValue = getDeepPath(value, subscriber.path.split('.'));
-            subscriber.fn(pathValue);
-            // we've notified this subscriber, so we can skip the rest of the paths
-            break;
-          }
-
-          // check for parent matches
-          // eg. notifyPath = "todos.0.tags"
-          // we notify subscribers of exact matches "todos.0.tags", and parents
-          // "todos.0", "todos"
-          const parentPathMatch = notifyPath.startsWith(subscriber.path);
-
-          if (parentPathMatch) {
-            const pathValue = getDeepPath(value, subscriber.path.split('.'));
-            subscriber.fn(pathValue);
-            break;
-          }
-        }
-      } else {
-        // If the subscriber is watching the entire state, then notify the
-        // subscriber with the complete state object
-        subscriber.fn(value);
-      }
-    }
+    notifyPathSubscribers(subscribers.current, value, paths);
   };
 
   const subscribe = useCallback((fn: Function) => {
@@ -258,3 +164,4 @@ export const useComputed = <T,>(
     []
   );
 };
+
