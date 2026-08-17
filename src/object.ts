@@ -89,10 +89,7 @@ function copyObj(obj: any): any {
  *
  * console.log(result) // 'apples'
  */
-export const getDeepPath = (
-  obj: unknown,
-  paths: string[]
-): any => {
+export const getDeepPath = (obj: unknown, paths: string[]): any => {
   // Handle undefined or null objects
   if (obj === undefined || obj === null || paths.length === 0) {
     return undefined;

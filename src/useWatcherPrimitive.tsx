@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import { WatcherType } from './shared';
 
 export interface WatcherPrimitive<T extends unknown> {

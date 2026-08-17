@@ -20,21 +20,21 @@ describe('useComputed', () => {
     expect(result.current.getState()).toEqual({ doubled: 4 });
     expect(result.current.getPath('doubled')).toBe(4);
   });
-  
+
   test('update computed state when the dependency changes', () => {
     const store = watcherStore({ count: 2 });
     const computeFn = mock((state: { count: number }) => ({
       doubled: state.count * 2,
     }));
-    
+
     const { result } = renderHook(() => useComputed(store, computeFn));
-    
+
     expect(result.current.getState()).toEqual({ doubled: 4 });
-    
+
     act(() => {
       store.setPath('count', 3);
     });
-    
+
     expect(result.current.getState()).toEqual({ doubled: 6 });
     expect(computeFn).toHaveBeenCalledTimes(2);
   });
@@ -311,9 +311,12 @@ describe('useComputed', () => {
     const storeB = watcherStore({ count: 3 });
 
     const { result } = renderHook(() =>
-      useComputed([storeA, storeB], ([a, b]: [{ count: number }, { count: number }]) => ({
-        sum: a.count + b.count,
-      }))
+      useComputed(
+        [storeA, storeB],
+        ([a, b]: [{ count: number }, { count: number }]) => ({
+          sum: a.count + b.count,
+        })
+      )
     );
 
     expect(result.current.getState()).toEqual({ sum: 5 });
@@ -328,7 +331,9 @@ describe('useComputed', () => {
       })
     );
 
-    const { result } = renderHook(() => useComputed([storeA, storeB], computeFn));
+    const { result } = renderHook(() =>
+      useComputed([storeA, storeB], computeFn)
+    );
 
     expect(result.current.getState()).toEqual({ sum: 5 });
     expect(computeFn).toHaveBeenCalledTimes(1);
@@ -367,7 +372,10 @@ describe('useComputed', () => {
 
   test('recompute when any path subscription in the dependency array changes', () => {
     const storeA = watcherStore({ user: { firstName: 'Ada' }, theme: 'dark' });
-    const storeB = watcherStore({ user: { firstName: 'Grace' }, theme: 'light' });
+    const storeB = watcherStore({
+      user: { firstName: 'Grace' },
+      theme: 'light',
+    });
     const computeFn = mock(([a, b]: [string, string]) => `${a} & ${b}`);
 
     const { result } = renderHook(() =>
@@ -444,9 +452,8 @@ describe('useComputed', () => {
     const { result, rerender } = renderHook(
       ({ primitiveNumber }) => {
         const watcherNumber = useWatcher(2);
-        const computed = useComputed(
-          watcherNumber,
-          watcherValue => computeFn(watcherValue, primitiveNumber)
+        const computed = useComputed(watcherNumber, watcherValue =>
+          computeFn(watcherValue, primitiveNumber)
         );
 
         return computed.useState();
@@ -611,10 +618,8 @@ describe('useComputed', () => {
     const store = watcherStore({ count: 2 });
     const initialOptions = { multiplier: 3 };
     const computeFn = mock(
-      ([state, options]: [
-        { count: number },
-        { multiplier: number },
-      ]) => state.count * options.multiplier
+      ([state, options]: [{ count: number }, { multiplier: number }]) =>
+        state.count * options.multiplier
     );
 
     const { result, rerender } = renderHook(
@@ -764,12 +769,7 @@ describe('useComputed', () => {
 
     const { result } = renderHook(() =>
       useComputed(
-        [
-          store,
-          { watcher: pathStore, path: 'value' },
-          'label',
-          options,
-        ],
+        [store, { watcher: pathStore, path: 'value' }, 'label', options],
         computeFn
       )
     );
@@ -780,12 +780,7 @@ describe('useComputed', () => {
       string,
       typeof options,
     ];
-    expect(values).toEqual([
-      store.getState(),
-      5,
-      'label',
-      options,
-    ]);
+    expect(values).toEqual([store.getState(), 5, 'label', options]);
     expect(values[3]).toBe(options);
     expect(computeFn).toHaveBeenCalledTimes(1);
   });
@@ -821,9 +816,12 @@ describe('useComputed', () => {
     const storeB = watcherStore({ label: 'two' });
 
     const { result } = renderHook(() =>
-      useComputed([storeA, storeB], ([a, b]: [{ count: number }, { label: string }]) => ({
-        summary: `${b.label}:${a.count}`,
-      }))
+      useComputed(
+        [storeA, storeB],
+        ([a, b]: [{ count: number }, { label: string }]) => ({
+          summary: `${b.label}:${a.count}`,
+        })
+      )
     );
     const subscriber = mock(() => {});
 
@@ -1010,10 +1008,7 @@ describe('useComputed', () => {
 
     const { result: product } = renderHook(() =>
       useComputed(
-        [
-          storeA,
-          { watcher: valueComputed.current, path: 'value' },
-        ],
+        [storeA, { watcher: valueComputed.current, path: 'value' }],
         ([a, value]: [{ multiplier: number }, number]) => ({
           product: a.multiplier * value,
         })
@@ -1075,10 +1070,13 @@ describe('useComputed', () => {
     const seen: Array<{ value: number; prev: number | undefined }> = [];
 
     const { result } = renderHook(() =>
-      useComputed(store, (state: { count: number }, prev?: { doubled: number }) => {
-        seen.push({ value: state.count, prev: prev?.doubled });
-        return { doubled: state.count * 2 };
-      })
+      useComputed(
+        store,
+        (state: { count: number }, prev?: { doubled: number }) => {
+          seen.push({ value: state.count, prev: prev?.doubled });
+          return { doubled: state.count * 2 };
+        }
+      )
     );
 
     expect(result.current.getState()).toEqual({ doubled: 4 });
@@ -1106,9 +1104,7 @@ describe('useComputed', () => {
       if (a === b) return true;
       if (typeof a !== typeof b) return false;
       if (Array.isArray(a) && Array.isArray(b)) {
-        return (
-          a.length === b.length && a.every((v, i) => deepEqual(v, b[i]))
-        );
+        return a.length === b.length && a.every((v, i) => deepEqual(v, b[i]));
       }
       if (a && b && typeof a === 'object' && typeof b === 'object') {
         const ak = Object.keys(a as object);

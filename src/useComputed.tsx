@@ -172,10 +172,7 @@ export function useComputed<T>(
       pendingNotify.current = false;
       queueMicrotask(() => {
         if (!cancelled) {
-          notifySubscribers(
-            state.current,
-            Object.keys(Object(state.current))
-          );
+          notifySubscribers(state.current, Object.keys(Object(state.current)));
         }
       });
     }

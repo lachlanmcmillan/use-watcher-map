@@ -20,7 +20,7 @@
 
 - **New** `useComputed` accepts an array of dependencies
 
-  `computeFn` receives an array of values, in order, and recomputes when any 
+  `computeFn` receives an array of values, in order, and recomputes when any
   one changes.
 
   ```typescript
@@ -35,7 +35,7 @@
   computed value (`undefined` on the first run). If you return `prev` then
   nothing will be updated.
 
-  This lets you return `prev` when you don't want the computed to update, 
+  This lets you return `prev` when you don't want the computed to update,
   giving better control over renders.
 
   ```typescript

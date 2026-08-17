@@ -326,11 +326,7 @@ const WatchFirstTodoCompleted = ({
   );
 };
 
-const WatchFirstTodoTags = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchFirstTodoTags = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const firstTodoTags = watcher.usePath('todos.0.tags');
   return (
     <RerenderIndicator>
@@ -354,11 +350,7 @@ const WatchFirstTodoFirstTag = ({
   );
 };
 
-const WatchSecondTodoText = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchSecondTodoText = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const secondTodoText = watcher.usePath('todos.1.text');
   return (
     <RerenderIndicator>
@@ -369,11 +361,7 @@ const WatchSecondTodoText = ({
   );
 };
 
-const WatchThirdTodoTags = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchThirdTodoTags = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const thirdTodoTags = watcher.usePath('todos.2.tags');
   return (
     <RerenderIndicator>
@@ -384,11 +372,7 @@ const WatchThirdTodoTags = ({
   );
 };
 
-const ListenToFirstTodo = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const ListenToFirstTodo = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchPath('todos.0', value => {
     console.log(`watcher.watchpath("todos.0") =>`, value);
   });
@@ -418,11 +402,7 @@ const ListenToFirstTodoCompleted = ({
   );
 };
 
-const ListenToFirstTodoTags = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const ListenToFirstTodoTags = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchPath('todos.0.tags', value => {
     console.log(`watcher.watchpath("todos.0.tags") =>`, value);
   });

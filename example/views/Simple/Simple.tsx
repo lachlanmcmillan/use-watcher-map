@@ -74,11 +74,7 @@ const WatchingState = ({ watcher }: { watcher: WatcherMap<State> }) => {
   );
 };
 
-const WatchingCounterOne = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchingCounterOne = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const counterOne = watcher.usePath('counterOne');
   return (
     <RerenderIndicator>
@@ -89,11 +85,7 @@ const WatchingCounterOne = ({
   );
 };
 
-const WatchingCounterTwo = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchingCounterTwo = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const counterTwo = watcher.usePath('counterTwo');
   return (
     <RerenderIndicator>
@@ -104,11 +96,7 @@ const WatchingCounterTwo = ({
   );
 };
 
-const ListeningCounterOne = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const ListeningCounterOne = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchPath('counterOne', value => {
     console.log(`watcher.watchpath("counterOne") =>`, value);
   });
@@ -121,11 +109,7 @@ const ListeningCounterOne = ({
   );
 };
 
-const ListeningCounterTwo = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const ListeningCounterTwo = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchPath('counterTwo', value => {
     console.log(`watcher.watchpath("counterTwo") =>`, value);
   });

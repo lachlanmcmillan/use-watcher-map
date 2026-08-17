@@ -101,11 +101,7 @@ const WatchingState = ({ watcher }: { watcher: WatcherMap<State> }) => {
   );
 };
 
-const WatchingObjectOne = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchingObjectOne = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const objectOne = watcher.usePath('objectOne');
   return (
     <RerenderIndicator>
@@ -116,11 +112,7 @@ const WatchingObjectOne = ({
   );
 };
 
-const WatchingCounterOne = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchingCounterOne = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const counterOne = watcher.usePath('objectOne.counterOne');
   return (
     <RerenderIndicator>
@@ -131,11 +123,7 @@ const WatchingCounterOne = ({
   );
 };
 
-const WatchingCounterTwo = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const WatchingCounterTwo = ({ watcher }: { watcher: WatcherMap<State> }) => {
   const counterTwo = watcher.usePath('objectOne.counterTwo');
   return (
     <RerenderIndicator>
@@ -146,11 +134,7 @@ const WatchingCounterTwo = ({
   );
 };
 
-const ListeningCounterOne = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const ListeningCounterOne = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchPath('objectOne.counterOne', value => {
     console.log(`watcher.watchPath("objectOne.counterOne") =>`, value);
   });
@@ -163,11 +147,7 @@ const ListeningCounterOne = ({
   );
 };
 
-const ListeningCounterTwo = ({
-  watcher,
-}: {
-  watcher: WatcherMap<State>;
-}) => {
+const ListeningCounterTwo = ({ watcher }: { watcher: WatcherMap<State> }) => {
   watcher.watchPath('objectOne.counterTwo', value => {
     console.log(`watcher.watchPath("objectOne.counterTwo") =>`, value);
   });

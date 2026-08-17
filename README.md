@@ -42,7 +42,7 @@ function NameInput({ watcher }: { watcher: WatcherMap<FormState> }) {
   return (
     <input
       value={name}
-      onChange={(e) => watcher.setPath('user.name', e.target.value)}
+      onChange={e => watcher.setPath('user.name', e.target.value)}
     />
   );
 }
@@ -62,18 +62,18 @@ React hook for managing nested object state with path-based subscriptions. Creat
 
 #### Methods
 
-| Method | Description |
-|--------|-------------|
-| `getState()` | Get the entire state object |
-| `getPath(path)` | Get value at a specific path |
-| `setState(data)` | Replace the entire state (notifies all subscribers) |
-| `setPath(path, value)` | Update a specific path (notifies only affected subscribers) |
-| `clearPath(path, removeEmptyObjects?)` | Delete a value at a path |
-| `batch(fn)` | Group multiple `setPath` calls, notify subscribers once |
-| `useState()` | React hook — re-renders when any state changes |
-| `usePath(path)` | React hook — re-renders only when the specified path changes |
-| `watchState(fn)` | Side-effect listener for any state change (useEffect-based) |
-| `watchPath(path, fn)` | Side-effect listener for a specific path (useEffect-based) |
+| Method                                 | Description                                                  |
+| -------------------------------------- | ------------------------------------------------------------ |
+| `getState()`                           | Get the entire state object                                  |
+| `getPath(path)`                        | Get value at a specific path                                 |
+| `setState(data)`                       | Replace the entire state (notifies all subscribers)          |
+| `setPath(path, value)`                 | Update a specific path (notifies only affected subscribers)  |
+| `clearPath(path, removeEmptyObjects?)` | Delete a value at a path                                     |
+| `batch(fn)`                            | Group multiple `setPath` calls, notify subscribers once      |
+| `useState()`                           | React hook — re-renders when any state changes               |
+| `usePath(path)`                        | React hook — re-renders only when the specified path changes |
+| `watchState(fn)`                       | Side-effect listener for any state change (useEffect-based)  |
+| `watchPath(path, fn)`                  | Side-effect listener for a specific path (useEffect-based)   |
 
 ---
 
@@ -97,12 +97,12 @@ function Child({ isLoading }: { isLoading: WatcherPrimitive<boolean> }) {
 
 #### Methods
 
-| Method | Description |
-|--------|-------------|
-| `getState()` | Get the current value |
-| `setState(value)` | Set the value and notify subscribers |
-| `useState()` | React hook — re-renders when the value changes |
-| `watchState(fn)` | Side-effect listener (useEffect-based) |
+| Method            | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `getState()`      | Get the current value                          |
+| `setState(value)` | Set the value and notify subscribers           |
+| `useState()`      | React hook — re-renders when the value changes |
+| `watchState(fn)`  | Side-effect listener (useEffect-based)         |
 
 ---
 
@@ -138,7 +138,11 @@ import { appStore } from './store';
 function ThemeToggle() {
   const theme = appStore.usePath('theme');
   return (
-    <button onClick={() => appStore.setPath('theme', theme === 'light' ? 'dark' : 'light')}>
+    <button
+      onClick={() =>
+        appStore.setPath('theme', theme === 'light' ? 'dark' : 'light')
+      }
+    >
       {theme}
     </button>
   );
@@ -147,8 +151,8 @@ function ThemeToggle() {
 
 #### Additional Methods (beyond WatcherMap)
 
-| Method | Description |
-|--------|-------------|
+| Method        | Description                                                                 |
+| ------------- | --------------------------------------------------------------------------- |
 | `onMount(fn)` | Called when first subscriber mounts. Return a cleanup function for unmount. |
 
 ---
@@ -157,7 +161,7 @@ function ThemeToggle() {
 
 Read-only derived watcher. `computeFn` runs when dependencies change.
 
-- `dependency`: watcher (`WatcherStore` / `WatcherMap` / `WatcherPrimitive` / `WatcherComputed`), `{ watcher, path }`, or an array of these (array → `computeFn` receives an array of values)
+- `dependency`: watcher (`WatcherStore` / `WatcherMap` / `WatcherPrimitive` / `WatcherComputed`), `{ watcher, path }`, a primitive, or an array of these (array → `computeFn` receives an array of values)
 - **WARNING** — skips update when new result is shallow-equal to previous state (`isShallowEqual`, top-level ref only):
   - `isShallowEqual(['apples'], ['apples'])` // true
   - `isShallowEqual([{ a: 1 }], [{ a: 1 }])` // false
@@ -173,7 +177,13 @@ const veg = useComputed({ watcher: store, path: 'items' }, (items, _prev) =>
 
 function VegList() {
   const items = veg.useState();
-  return <ul>{items.map(i => <li key={i.name}>{i.name}</li>)}</ul>;
+  return (
+    <ul>
+      {items.map(i => (
+        <li key={i.name}>{i.name}</li>
+      ))}
+    </ul>
+  );
 }
 ```
 
@@ -187,14 +197,14 @@ const names = useComputed({ watcher: store, path: 'items' }, (items, prev) => {
 
 #### Methods
 
-| Method | Description |
-|--------|-------------|
-| `getState()` | Get the entire computed value |
-| `getPath(path)` | Get value at a specific path of the computed value |
-| `useState()` | React hook — re-renders when the computed value changes |
-| `usePath(path)` | React hook — re-renders only when the specified path of the computed value changes |
-| `watchState(fn)` | Side-effect listener for any computed change (useEffect-based) |
-| `watchPath(path, fn)` | Side-effect listener for a specific path (useEffect-based) |
+| Method                | Description                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| `getState()`          | Get the entire computed value                                                      |
+| `getPath(path)`       | Get value at a specific path of the computed value                                 |
+| `useState()`          | React hook — re-renders when the computed value changes                            |
+| `usePath(path)`       | React hook — re-renders only when the specified path of the computed value changes |
+| `watchState(fn)`      | Side-effect listener for any computed change (useEffect-based)                     |
+| `watchPath(path, fn)` | Side-effect listener for a specific path (useEffect-based)                         |
 
 ---
 
@@ -238,7 +248,7 @@ watcher.batch(() => {
 
 ```tsx
 function Logger({ watcher }: { watcher: WatcherMap<State> }) {
-  watcher.watchPath('user.name', (name) => {
+  watcher.watchPath('user.name', name => {
     console.log('Name changed to:', name);
   });
   return null;
@@ -249,29 +259,36 @@ function Logger({ watcher }: { watcher: WatcherMap<State> }) {
 
 ## When to Use What
 
-| | `useWatcherMap` | `useWatcher` | `watcherStore` |
-|---|---|---|---|
-| **Use for** | Nested objects | Primitives / simple values | Global shared state |
-| **Created in** | React component | React component | Module scope |
-| **Path subscriptions** | Yes | No | Yes |
-| **Lifecycle hooks** | No | No | `onMount` |
+|                        | `useWatcherMap` | `useWatcher`               | `watcherStore`      |
+| ---------------------- | --------------- | -------------------------- | ------------------- |
+| **Use for**            | Nested objects  | Primitives / simple values | Global shared state |
+| **Created in**         | React component | React component            | Module scope        |
+| **Path subscriptions** | Yes             | No                         | Yes                 |
+| **Lifecycle hooks**    | No              | No                         | `onMount`           |
 
 ---
 
 ## Utility Types
 
 ```typescript
-import type { PathOf, TypeAtPath, WatcherMap, WatcherPrimitive, WatcherStore, WatcherComputed } from 'use-watcher-map';
+import type {
+  PathOf,
+  TypeAtPath,
+  WatcherMap,
+  WatcherPrimitive,
+  WatcherStore,
+  WatcherComputed,
+} from 'use-watcher-map';
 ```
 
-| Type | Description |
-|------|-------------|
-| `PathOf<T>` | Union of all valid dot-notation paths for type `T` |
-| `TypeAtPath<T, P>` | The type of the value at path `P` in type `T` |
-| `WatcherMap<T>` | Return type of `useWatcherMap` |
-| `WatcherPrimitive<T>` | Return type of `useWatcher` |
-| `WatcherStore<T>` | Return type of `watcherStore` |
-| `WatcherComputed<T>` | Return type of `useComputed` |
+| Type                  | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| `PathOf<T>`           | Union of all valid dot-notation paths for type `T` |
+| `TypeAtPath<T, P>`    | The type of the value at path `P` in type `T`      |
+| `WatcherMap<T>`       | Return type of `useWatcherMap`                     |
+| `WatcherPrimitive<T>` | Return type of `useWatcher`                        |
+| `WatcherStore<T>`     | Return type of `watcherStore`                      |
+| `WatcherComputed<T>`  | Return type of `useComputed`                       |
 
 ---
 

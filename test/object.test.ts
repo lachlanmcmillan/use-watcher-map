@@ -270,9 +270,9 @@ describe('isShallowEqual', () => {
     const nested = { count: 1 };
 
     expect(isShallowEqual({ nested }, { nested })).toBe(true);
-    expect(isShallowEqual({ nested: { count: 1 } }, { nested: { count: 1 } })).toBe(
-      false
-    );
+    expect(
+      isShallowEqual({ nested: { count: 1 } }, { nested: { count: 1 } })
+    ).toBe(false);
   });
 
   it('should ignore non-enumerable properties', () => {

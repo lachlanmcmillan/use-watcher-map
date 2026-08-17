@@ -736,9 +736,7 @@ describe('watcherStore', () => {
 
       store.onMount(onMountFn);
 
-      const { rerender, unmount } = renderHook(() =>
-        store.usePath('filter')
-      );
+      const { rerender, unmount } = renderHook(() => store.usePath('filter'));
 
       // First render -> first subscriber added -> onMount fires once.
       expect(onMountFn).toHaveBeenCalledTimes(1);
