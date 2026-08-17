@@ -1,6 +1,7 @@
 import classes from './computed.module.css';
 import { useComputed, WatcherComputed } from '../../../src/useComputed';
 import { useWatcherMap, WatcherMap } from '../../../src/useWatcherMap';
+import { useWatcherPrimitive as useWatcher } from '../../../src/useWatcherPrimitive';
 import { RerenderIndicator } from '../../components/RerenderIndicator/RerenderIndicator';
 
 type ItemType = 'fruits' | 'vegetables';
@@ -137,6 +138,7 @@ export function ComputedExample() {
           <HasVegetables hasVegetables={$hasVegetables} />
           <HasHealtyDiet $hasHealthyDiet={$hasHealthyDiet} />
           <VegetableSummary $stats={$itemStats} />
+          <InferredProduct />
         </div>
       </div>
     </div>
@@ -237,6 +239,31 @@ const VegetableSummary = ({
         <p className={classes.booleanValue}>
           stats.usePath('vegetableSummary'): <strong>{String(label)}</strong>
         </p>
+      </RerenderIndicator>
+    </section>
+  );
+};
+
+const InferredProduct = () => {
+  const $a = useWatcher(101);
+  const $b = useWatcher(102);
+  const $product = useComputed([$a, $b], ([a, b]) => a * b);
+
+  // These annotations fail to compile if T were unknown.
+  const snapshot = $product.getState();
+  const value = $product.useState();
+
+  return (
+    <section>
+      <h3>Inferred Primitive</h3>
+      <RerenderIndicator>
+        <p className={classes.booleanValue}>
+          getState(): <strong>{snapshot}</strong>
+        </p>
+        <p className={classes.booleanValue}>
+          useState(): <strong>{value}</strong>
+        </p>
+        <button onClick={() => $a.setState($a.getState() + 1)}>a++</button>
       </RerenderIndicator>
     </section>
   );
