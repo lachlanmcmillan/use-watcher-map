@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 6.0.0-beta.5
+
+- **New** `useComputed` accepts non-watcher dependencies
+
+  Primitives, plain objects, and other values can be passed alongside watchers.
+  `useComputed` recomputes when those values change by identity. Mixed arrays of
+  watchers, path subscriptions, and plain values are supported.
+
+  ```typescript
+  const MyComponent = ({ $gross, includeTax }: { $gross: WatcherPrimitive<number>, includeTax: boolean }) => {
+    // total will recompute when $gross or includeTax changes
+    const total = useComputed([$gross, includeTax], ([gross, includeTax]) => 
+      gross * (includeTax ? 1.1 : 1)
+    );
+  ```
+
+- **New** agent skill shipped with the package (`skills/use-watcher-map`)
+
 ## 6.0.0-beta.4
 
 - **New** `computedStore`

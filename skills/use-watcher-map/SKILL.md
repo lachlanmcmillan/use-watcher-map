@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   package: use-watcher-map
-  version: 6.0.0-beta.4
+  version: 6.0.0-beta.5
 ---
 
 # use-watcher-map
