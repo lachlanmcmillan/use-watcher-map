@@ -1,5 +1,6 @@
 import { describe, test, expect, mock, beforeEach } from 'bun:test';
-import { renderHook, act } from '@testing-library/react';
+import { render, renderHook, act, waitFor } from '@testing-library/react';
+import { memo } from 'react';
 import { useComputed } from '../src/useComputed';
 import { useWatcher } from '../src/index';
 import { watcherStore } from '../src/watcherStore';
@@ -433,6 +434,386 @@ describe('useComputed', () => {
     });
 
     expect(result.current.getState()).toEqual({ product: 40 });
+  });
+
+  test('does not recompute when an omitted regular dependency changes', () => {
+    const computeFn = mock(
+      (watcherValue: number, primitiveNumber: number) =>
+        watcherValue + primitiveNumber
+    );
+    const { result, rerender } = renderHook(
+      ({ primitiveNumber }) => {
+        const watcherNumber = useWatcher(2);
+        const computed = useComputed(
+          watcherNumber,
+          watcherValue => computeFn(watcherValue, primitiveNumber)
+        );
+
+        return computed.useState();
+      },
+      { initialProps: { primitiveNumber: 3 } }
+    );
+
+    expect(result.current).toBe(5);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    rerender({ primitiveNumber: 4 });
+
+    expect(result.current).toBe(5);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+  });
+
+  test('recompute when an included primitive dependency changes', () => {
+    const computeFn = mock(
+      (watcherValue: number, primitiveNumber: number) =>
+        watcherValue + primitiveNumber
+    );
+    const { result, rerender } = renderHook(
+      ({ primitiveNumber }) => {
+        const watcherNumber = useWatcher(2);
+        const computed = useComputed(
+          [watcherNumber, primitiveNumber],
+          ([watcherValue]) => computeFn(watcherValue, primitiveNumber)
+        );
+
+        return computed.useState();
+      },
+      { initialProps: { primitiveNumber: 3 } }
+    );
+
+    expect(result.current).toBe(5);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    rerender({ primitiveNumber: 3 });
+
+    expect(result.current).toBe(5);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    rerender({ primitiveNumber: 4 });
+
+    expect(result.current).toBe(6);
+    expect(computeFn).toHaveBeenCalledTimes(2);
+  });
+
+  test('same-component useState does not re-render after a primitive dep change', async () => {
+    // When a primitive dep changes, useComputed writes the new snapshot during
+    // *this* render so useState() already returns it:
+    //
+    //   const doubled = useComputed(someNumber, n => n * 2);
+    //   const nx2 = doubled.useState(); // 6 on the someNumber: 2 → 3 render
+    //
+    // Subscriber notify is deferred to a microtask so React can first cache
+    // that snapshot. useSyncExternalStore then compares (both 6) and bails
+    // out — no second render. A memoized child still gets the notify.
+    let renderCount = 0;
+
+    const { result, rerender } = renderHook(
+      ({ someNumber }) => {
+        renderCount++;
+        const doubled = useComputed(someNumber, (n: number) => n * 2);
+        return doubled.useState();
+      },
+      { initialProps: { someNumber: 2 } }
+    );
+
+    expect(result.current).toBe(4);
+    const rendersAfterMount = renderCount;
+
+    rerender({ someNumber: 3 });
+    await act(async () => {});
+
+    expect(result.current).toBe(6);
+    expect(renderCount).toBe(rendersAfterMount + 1);
+  });
+
+  test('child useState still updates when a primitive dep changes on the parent', async () => {
+    // memo child does not re-render just because the parent did. It only updates
+    // when useSyncExternalStore is notified — which is pendingNotify's job.
+    const Child = memo(function Child({
+      computed,
+    }: {
+      computed: { useState: () => number };
+    }) {
+      return <span>{computed.useState()}</span>;
+    });
+
+    function Parent({ someNumber }: { someNumber: number }) {
+      const doubled = useComputed(someNumber, (n: number) => n * 2);
+      return <Child computed={doubled} />;
+    }
+
+    const { rerender } = render(<Parent someNumber={2} />);
+    expect(document.body.textContent).toBe('4');
+
+    rerender(<Parent someNumber={3} />);
+    await waitFor(() => expect(document.body.textContent).toBe('6'));
+  });
+
+  test('does not re-render the owner when a computed dep updates unless the owner is subscribed', () => {
+    // Creating watchers + a computed does not subscribe this component. setState
+    // on a source watcher updates the computed store, but the owner only
+    // re-renders if it called useState/usePath on one of them.
+    //
+    //   const w1 = useWatcher(101);
+    //   const w2 = useWatcher(102);
+    //   const product = useComputed([w1, w2], ([a, b]) => a * b);
+    //   const handleClick = () => w1.setState(w1.getState() + 1);
+    let renderCount = 0;
+
+    const { result } = renderHook(() => {
+      renderCount++;
+      const watcher1 = useWatcher(101);
+      const watcher2 = useWatcher(102);
+      const product = useComputed(
+        [watcher1, watcher2],
+        ([a, b]: [number, number]) => a * b
+      );
+      return { watcher1, product };
+    });
+
+    expect(result.current.product.getState()).toBe(10302);
+    const rendersAfterMount = renderCount;
+
+    act(() => {
+      result.current.watcher1.setState(result.current.watcher1.getState() + 1);
+    });
+
+    expect(renderCount).toBe(rendersAfterMount);
+    expect(result.current.product.getState()).toBe(10404);
+  });
+
+  test('re-renders the owner when it is subscribed to a computed that updates', () => {
+    let renderCount = 0;
+
+    const { result } = renderHook(() => {
+      renderCount++;
+      const watcher1 = useWatcher(101);
+      const watcher2 = useWatcher(102);
+      const product = useComputed(
+        [watcher1, watcher2],
+        ([a, b]: [number, number]) => a * b
+      );
+      return { watcher1, value: product.useState() };
+    });
+
+    expect(result.current.value).toBe(10302);
+    const rendersAfterMount = renderCount;
+
+    act(() => {
+      result.current.watcher1.setState(result.current.watcher1.getState() + 1);
+    });
+
+    expect(result.current.value).toBe(10404);
+    expect(renderCount).toBe(rendersAfterMount + 1);
+  });
+
+  test('recompute when a regular dependency changes reference', () => {
+    const store = watcherStore({ count: 2 });
+    const initialOptions = { multiplier: 3 };
+    const computeFn = mock(
+      ([state, options]: [
+        { count: number },
+        { multiplier: number },
+      ]) => state.count * options.multiplier
+    );
+
+    const { result, rerender } = renderHook(
+      ({ options }) => {
+        const computed = useComputed([store, options], computeFn);
+        return computed.useState();
+      },
+      { initialProps: { options: initialOptions } }
+    );
+
+    expect(result.current).toBe(6);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    rerender({ options: initialOptions });
+
+    expect(result.current).toBe(6);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    rerender({ options: { multiplier: 4 } });
+
+    expect(result.current).toBe(8);
+    expect(computeFn).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      store.setPath('count', 5);
+    });
+
+    expect(result.current).toBe(20);
+    expect(computeFn).toHaveBeenCalledTimes(3);
+  });
+
+  test('does not recompute or resubscribe when a path dependency wrapper is recreated', () => {
+    const store = watcherStore({ count: 2 });
+    const originalAddSubscriber = store.__addSubscriber__;
+    const originalRemoveSubscriber = store.__removeSubscriber__;
+    const addSubscriber = mock(originalAddSubscriber);
+    const removeSubscriber = mock(originalRemoveSubscriber);
+    const computeFn = mock((count: number) => count * 2);
+
+    store.__addSubscriber__ = addSubscriber;
+    store.__removeSubscriber__ = removeSubscriber;
+
+    const { result, rerender, unmount } = renderHook(
+      ({ unrelatedProp }) => {
+        const computed = useComputed(
+          { watcher: store, path: 'count' },
+          computeFn
+        );
+        return { value: computed.useState(), unrelatedProp };
+      },
+      { initialProps: { unrelatedProp: 1 } }
+    );
+
+    expect(result.current.value).toBe(4);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+    expect(addSubscriber).toHaveBeenCalledTimes(1);
+    expect(removeSubscriber).not.toHaveBeenCalled();
+
+    rerender({ unrelatedProp: 2 });
+
+    expect(result.current.value).toBe(4);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+    expect(addSubscriber).toHaveBeenCalledTimes(1);
+    expect(removeSubscriber).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(removeSubscriber).toHaveBeenCalledTimes(1);
+  });
+
+  test('recompute and resubscribe when a path dependency changes', () => {
+    const store = watcherStore({ first: 2, second: 5 });
+    const computeFn = mock((value: number) => value * 2);
+
+    const { result, rerender } = renderHook(
+      ({ path }: { path: 'first' | 'second' }) => {
+        const computed = useComputed({ watcher: store, path }, computeFn);
+        return computed.useState();
+      },
+      { initialProps: { path: 'first' as 'first' | 'second' } }
+    );
+
+    expect(result.current).toBe(4);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    rerender({ path: 'second' });
+
+    expect(result.current).toBe(10);
+    expect(computeFn).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      store.setPath('first', 3);
+    });
+
+    expect(result.current).toBe(10);
+    expect(computeFn).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      store.setPath('second', 6);
+    });
+
+    expect(result.current).toBe(12);
+    expect(computeFn).toHaveBeenCalledTimes(3);
+  });
+
+  test('recompute and resubscribe when a watcher dependency changes reference', () => {
+    const storeA = watcherStore({ count: 2 });
+    const storeB = watcherStore({ count: 5 });
+    const computeFn = mock((state: { count: number }) => state.count * 2);
+
+    const { result, rerender } = renderHook(
+      ({ store }) => {
+        const computed = useComputed(store, computeFn);
+        return computed.useState();
+      },
+      { initialProps: { store: storeA } }
+    );
+
+    expect(result.current).toBe(4);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    rerender({ store: storeB });
+
+    expect(result.current).toBe(10);
+    expect(computeFn).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      storeA.setPath('count', 3);
+    });
+
+    expect(result.current).toBe(10);
+    expect(computeFn).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      storeB.setPath('count', 6);
+    });
+
+    expect(result.current).toBe(12);
+    expect(computeFn).toHaveBeenCalledTimes(3);
+  });
+
+  test('preserve dependency value order across watcher, path, primitive, and object dependencies', () => {
+    const store = watcherStore({ count: 2 });
+    const pathStore = watcherStore({ value: 5 });
+    const options = { multiplier: 3 };
+    const computeFn = mock((values: any[]) => values);
+
+    const { result } = renderHook(() =>
+      useComputed(
+        [
+          store,
+          { watcher: pathStore, path: 'value' },
+          'label',
+          options,
+        ],
+        computeFn
+      )
+    );
+
+    const values = result.current.getState() as [
+      { count: number },
+      number,
+      string,
+      typeof options,
+    ];
+    expect(values).toEqual([
+      store.getState(),
+      5,
+      'label',
+      options,
+    ]);
+    expect(values[3]).toBe(options);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+  });
+
+  test('unsubscribe only watcher dependencies from a mixed dependency array', () => {
+    const store = watcherStore({ count: 2 });
+    const originalRemoveSubscriber = store.__removeSubscriber__;
+    const removeSubscriber = mock(originalRemoveSubscriber);
+    const regularRemoveSubscriber = mock(() => {});
+    const regularDependency = {
+      multiplier: 3,
+      __removeSubscriber__: regularRemoveSubscriber,
+    };
+
+    store.__removeSubscriber__ = removeSubscriber;
+
+    const { unmount } = renderHook(() =>
+      useComputed(
+        [store, 4, regularDependency],
+        ([state, primitiveNumber, options]) =>
+          state.count * primitiveNumber * options.multiplier
+      )
+    );
+
+    unmount();
+
+    expect(removeSubscriber).toHaveBeenCalledTimes(1);
+    expect(regularRemoveSubscriber).not.toHaveBeenCalled();
   });
 
   test('do not notify subscribers when the computed result is shallow-equal across array updates', () => {

@@ -4,6 +4,7 @@ import {
   getDependencyValue,
   notifyPathSubscribers,
   subscribeToDependency,
+  WatcherType,
 } from './shared';
 import type { WatcherComputed } from './useComputed';
 import type { WatcherStore } from './watcherStore';
@@ -16,7 +17,20 @@ type StorePathSubscription = {
 export type ComputedStoreDependency =
   | WatcherStore<any>
   | WatcherComputed<any>
+  | ComputedStore<any>
   | StorePathSubscription;
+
+type ComputedStore<T> = {
+  getState: () => T;
+  getPath: (path: string) => any;
+  useState: () => T;
+  usePath: (path: string) => any;
+  watchState: (fn: (value: T) => void) => void;
+  watchPath: (path: string, fn: (value: any) => void) => void;
+  __addSubscriber__: (fn: Function, path?: string) => void;
+  __removeSubscriber__: (fn: Function) => void;
+  __type__: typeof WatcherType.ComputedStore;
+};
 
 /**
  * Read-only derived store. Unlike useComputed, this is NOT a hook — create it
@@ -28,7 +42,7 @@ export type ComputedStoreDependency =
 export const computedStore = <T,>(
   dependency: ComputedStoreDependency | ComputedStoreDependency[],
   computeFn: (value: any | any[], prev?: any | any[]) => T
-): WatcherComputed<T> => {
+): ComputedStore<T> => {
   let state: T | undefined = undefined;
   let hasState = false;
   let subscribers: { path?: string; fn: Function }[] = [];
@@ -166,5 +180,6 @@ export const computedStore = <T,>(
     // internal fns, do not call directly
     __addSubscriber__: addSubscriber,
     __removeSubscriber__: removeSubscriber,
+    __type__: WatcherType.ComputedStore,
   };
 };

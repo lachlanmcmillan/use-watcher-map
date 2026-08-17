@@ -1,5 +1,21 @@
 import { getDeepPath } from './object';
 
+export const WatcherType = {
+  WatcherStore: 'WatcherStore',
+  WatcherMap: 'WatcherMap',
+  WatcherPrimitive: 'WatcherPrimitive',
+  WatcherComputed: 'WatcherComputed',
+  ComputedStore: 'ComputedStore',
+} as const;
+
+export type WatcherType = (typeof WatcherType)[keyof typeof WatcherType];
+
+const watcherTypes = new Set<string>(Object.values(WatcherType));
+
+export const isWatcherType = (value: unknown): value is WatcherType => {
+  return typeof value === 'string' && watcherTypes.has(value);
+};
+
 type WatcherDependencyTarget = {
   getState: () => any;
   __addSubscriber__: (
@@ -9,22 +25,47 @@ type WatcherDependencyTarget = {
   ) => void;
   __removeSubscriber__: (fn: Function) => void;
   onMount?: unknown;
+  __type__: WatcherType;
 };
 
-type PathSubscription = {
-  watcher: WatcherDependencyTarget & { getPath: (path: string) => any };
+export type PathSubscription = {
+  watcher: WatcherDependencyTarget & { getPath: (path: any) => any };
   path: string;
 };
 
-type Dependency = WatcherDependencyTarget | PathSubscription;
+export type WatcherDependency = WatcherDependencyTarget | PathSubscription;
+
+export type Dependency =
+  | WatcherDependency
+  | string
+  | number
+  | boolean
+  | bigint
+  | symbol
+  | object
+  | null
+  | undefined;
 
 export const isPathSubscription = (
   dependency: Dependency
 ): dependency is PathSubscription => {
   return (
+    typeof dependency === 'object' &&
+    dependency !== null &&
     Object.keys(dependency).length === 2 &&
     'watcher' in dependency &&
     'path' in dependency
+  );
+};
+
+export const isWatcherDependency = (
+  dependency: Dependency
+): dependency is WatcherDependencyTarget => {
+  return (
+    typeof dependency === 'object' &&
+    dependency !== null &&
+    '__type__' in dependency &&
+    isWatcherType(dependency.__type__)
   );
 };
 
@@ -39,7 +80,12 @@ export const getDependencyValue = (
     return dependency.watcher.getPath(dependency.path);
   }
 
-  return dependency.getState();
+  if (isWatcherDependency(dependency)) {
+    return dependency.getState();
+  }
+
+  // ASSUME PRIMITIVE
+  return dependency;
 };
 
 export const subscribeToDependency = (
@@ -58,20 +104,47 @@ export const subscribeToDependency = (
     };
   }
 
-  let [target, path] = isPathSubscription(dependency)
-    ? [dependency.watcher, dependency.path]
-    : [dependency, undefined];
-
-  // Only WatcherStore has a mount lifecycle, so only it accepts skipMountTracking.
-  if ('onMount' in target) {
-    target.__addSubscriber__(fn, path as never, { skipMountTracking: true });
-  } else if (path !== undefined) {
-    target.__addSubscriber__(fn, path as never);
-  } else {
-    target.__addSubscriber__(fn);
+  if (isPathSubscription(dependency)) {
+    const target = dependency.watcher;
+    target.__addSubscriber__(fn, dependency.path as never, {
+      skipMountTracking: true,
+    });
+    return () => target.__removeSubscriber__(fn);
   }
 
-  return () => target.__removeSubscriber__(fn);
+  if (isWatcherDependency(dependency)) {
+    const target = dependency;
+    if (target.__type__ === WatcherType.WatcherStore) {
+      target.__addSubscriber__(fn, undefined, { skipMountTracking: true });
+    } else {
+      target.__addSubscriber__(fn);
+    }
+    return () => target.__removeSubscriber__(fn);
+  }
+
+  // ASSUME PRIMITIVE
+  return () => {};
+};
+
+/**
+ * Expands path subscriptions into their watcher and path so React compares
+ * those values instead of the path subscription wrapper's reference.
+ */
+export const getExpandedDependencies = (
+  dependency: Dependency | Dependency[]
+): Dependency[] => {
+  const dependencies = Array.isArray(dependency) ? dependency : [dependency];
+  const expandedDependencies: Dependency[] = [];
+
+  for (const dependency of dependencies) {
+    if (isPathSubscription(dependency)) {
+      expandedDependencies.push(dependency.watcher, dependency.path);
+    } else {
+      expandedDependencies.push(dependency);
+    }
+  }
+
+  return expandedDependencies;
 };
 
 /**

@@ -8,12 +8,13 @@ import {
 import { getDeepPath, isShallowEqual } from './object';
 import {
   getDependencyValue,
+  getExpandedDependencies,
   notifyPathSubscribers,
   subscribeToDependency,
+  WatcherType,
+  type Dependency,
+  type PathSubscription,
 } from './shared';
-import { WatcherStore } from './watcherStore';
-import { WatcherMap } from './useWatcherMap';
-import { WatcherPrimitive } from './useWatcherPrimitive';
 
 export interface WatcherComputed<T> {
   /** get the entire computed state */
@@ -35,19 +36,19 @@ export interface WatcherComputed<T> {
   __addSubscriber__: (fn: Function, path?: string) => void;
   /** manually remove a subscriber from the computed store */
   __removeSubscriber__: (fn: Function) => void;
+  /** the type of the watcher */
+  __type__: typeof WatcherType.WatcherComputed;
 }
 
-type PathSubscription = {
-  watcher: WatcherStore<any> | WatcherMap<any> | WatcherComputed<any>;
-  path: string;
-};
+type DependencyValue<D> = D extends PathSubscription
+  ? any
+  : D extends { getState: () => infer Value }
+    ? Value
+    : D;
 
-type Dependency =
-  | WatcherStore<any>
-  | WatcherMap<any>
-  | WatcherPrimitive<any>
-  | WatcherComputed<any>
-  | PathSubscription;
+type DependencyValues<D extends readonly Dependency[]> = {
+  -readonly [K in keyof D]: DependencyValue<D[K]>;
+};
 
 /**
  * Read-only derived watcher. `computeFn` runs when dependencies change.
@@ -63,12 +64,55 @@ type Dependency =
  *   items.filter(i => i.type === 'veg')
  * );
  */
-export const useComputed = <T,>(
-  dependency: Dependency | Dependency[],
+export function useComputed<T, const D extends readonly Dependency[]>(
+  dependencies: D,
+  computeFn: (values: DependencyValues<D>, prev?: T) => T
+): WatcherComputed<T>;
+
+export function useComputed<T, D extends Dependency>(
+  dependency: D,
+  computeFn: (value: DependencyValue<D>, prev?: T) => T
+): WatcherComputed<T>;
+
+export function useComputed<T>(
+  dependency: any,
   computeFn: (value: any | any[], prev?: any | any[]) => T
-): WatcherComputed<T> => {
-  const state = useRef(computeFn(getDependencyValue(dependency), undefined));
+): WatcherComputed<T> {
+  const state = useRef<T>(undefined as T);
+  // Expanded deps this state was last computed for. Compared element-wise so
+  // a new array (or path-subscription wrapper) with the same contents is a no-op.
+  const computedForDeps = useRef<Dependency[] | null>(null);
+  // Render-time computes cannot notify subscribers. Flush this in the effect.
+  const pendingNotify = useRef(false);
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
+
+  // Expand once per render and reuse as the effect deps. Path subscriptions
+  // become [watcher, path] so React compares those identities, not the wrapper.
+  const expandedDeps = getExpandedDependencies(dependency);
+  const depsChanged =
+    computedForDeps.current === null ||
+    computedForDeps.current.length !== expandedDeps.length ||
+    computedForDeps.current.some((dep, i) => dep !== expandedDeps[i]);
+
+  // Compute during render when expanded deps change so this render's useState /
+  // getState already see the new snapshot. Watcher notifications still go
+  // through the effect subscription, not this path.
+  if (depsChanged) {
+    const isFirst = computedForDeps.current === null;
+    const nextState = computeFn(
+      getDependencyValue(dependency),
+      isFirst ? undefined : state.current
+    );
+    if (isFirst || !isShallowEqual(state.current, nextState)) {
+      state.current = nextState;
+      // Child subscribers (useState/usePath in other components) would otherwise
+      // miss primitive / watcher-identity updates that don't come from a store notify.
+      if (!isFirst) {
+        pendingNotify.current = true;
+      }
+    }
+    computedForDeps.current = expandedDeps;
+  }
 
   // --- helper fns ---
 
@@ -98,6 +142,9 @@ export const useComputed = <T,>(
     return getDeepPath(state.current, path.split('.'));
   }, []);
 
+  // Subscribe only. Do not recompute here on mount — that would double-call
+  // computeFn after the render-time compute above. Later effect runs (deps
+  // changed) still resubscribe; the new snapshot was already computed above.
   useEffect(() => {
     const updateComputed = () => {
       const nextState = computeFn(
@@ -109,11 +156,35 @@ export const useComputed = <T,>(
       }
 
       state.current = nextState;
-      notifySubscribers(nextState, Object.keys(Object(nextState)));
+      notifySubscribers(nextState, Object.keys(Object(state.current)));
     };
 
-    return subscribeToDependency(dependency, updateComputed);
-  }, [dependency, computeFn]);
+    const unsubscribe = subscribeToDependency(dependency, updateComputed);
+
+    // Defer until after this commit's other passive effects. useSyncExternalStore
+    // in *this* component updates its cached snapshot in a passive effect; if we
+    // notify first it still has the previous snapshot and forces a second render.
+    // A microtask runs after those effects, so same-component subscribers bail
+    // out (snapshot already matches) while children that did not re-render still
+    // get the push.
+    let cancelled = false;
+    if (pendingNotify.current) {
+      pendingNotify.current = false;
+      queueMicrotask(() => {
+        if (!cancelled) {
+          notifySubscribers(
+            state.current,
+            Object.keys(Object(state.current))
+          );
+        }
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, expandedDeps);
 
   // do not call setState from within this function or it will cause
   // an infinite loop
@@ -149,6 +220,9 @@ export const useComputed = <T,>(
     return useSyncExternalStore(subscribePath, getPathSnapshot);
   };
 
+  // useMemo is needed here to ensure the computed store API object is
+  // referentially stable across renders. This prevents unnecessary re-renders
+  // for consumers.
   return useMemo(
     () => ({
       getState,
@@ -160,8 +234,8 @@ export const useComputed = <T,>(
       // internal fns, do not call directly
       __addSubscriber__: addSubscriber,
       __removeSubscriber__: removeSubscriber,
+      __type__: WatcherType.WatcherComputed,
     }),
     []
   );
-};
-
+}

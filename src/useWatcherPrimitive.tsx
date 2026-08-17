@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { WatcherType } from './shared';
 
 export interface WatcherPrimitive<T extends unknown> {
   /** get the entire state */
@@ -19,6 +20,8 @@ export interface WatcherPrimitive<T extends unknown> {
   __addSubscriber__: (fn: Function) => void;
   /** manually remove a subscriber from the store */
   __removeSubscriber__: (fn: Function) => void;
+  /** the type of the watcher */
+  __type__: typeof WatcherType.WatcherPrimitive;
 }
 
 /**
@@ -82,13 +85,17 @@ export const useWatcherPrimitive = <T extends unknown>(
     []
   );
 
-  return {
-    getState,
-    setState,
-    useState: () => useSyncExternalStore<T>(subscribe, getState),
-    watchState,
-    // internal fns, do not call directly
-    __addSubscriber__: addSubscriber,
-    __removeSubscriber__: removeSubscriber,
-  };
+  return useMemo(
+    () => ({
+      getState,
+      setState,
+      useState: () => useSyncExternalStore<T>(subscribe, getState),
+      watchState,
+      // internal fns, do not call directly
+      __addSubscriber__: addSubscriber,
+      __removeSubscriber__: removeSubscriber,
+      __type__: WatcherType.WatcherPrimitive,
+    }),
+    []
+  );
 };

@@ -2,7 +2,11 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import type { WatcherBase } from './watcherBase';
 import { PathOf } from './pathOf';
-import { getUniqueBatchedUpdates, notifyPathSubscribers } from './shared';
+import {
+  getUniqueBatchedUpdates,
+  notifyPathSubscribers,
+  WatcherType,
+} from './shared';
 
 export interface WatcherStore<T extends Record<string, any>>
   extends WatcherBase<T> {
@@ -34,6 +38,7 @@ export interface WatcherStore<T extends Record<string, any>>
   ) => void;
   /** manually remove a subscriber from the store */
   __removeSubscriber__: (fn: Function) => void;
+  __type__: typeof WatcherType.WatcherStore;
 }
 
 /**
@@ -258,5 +263,6 @@ export const watcherStore = <T extends Record<string, any>>(
     // internal fns, do not call directly
     __addSubscriber__: addSubscriber,
     __removeSubscriber__: removeSubscriber,
+    __type__: WatcherType.WatcherStore,
   };
 };

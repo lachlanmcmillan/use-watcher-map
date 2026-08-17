@@ -7,7 +7,11 @@ import {
 } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import { PathOf } from './pathOf';
-import { getUniqueBatchedUpdates, notifyPathSubscribers } from './shared';
+import {
+  getUniqueBatchedUpdates,
+  notifyPathSubscribers,
+  WatcherType,
+} from './shared';
 import { WatcherBase } from './watcherBase';
 
 export interface WatcherMap<T extends Record<string, any>>
@@ -18,6 +22,8 @@ export interface WatcherMap<T extends Record<string, any>>
   __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
   /** manually remove a subscriber from the store */
   __removeSubscriber__: (fn: Function) => void;
+  /** the type of the watcher */
+  __type__: typeof WatcherType.WatcherMap;
 }
 
 /**
@@ -189,6 +195,7 @@ export const useWatcherMap = <T extends Record<string, any>>(
       // internal fns, do not call directly
       __addSubscriber__: addSubscriber,
       __removeSubscriber__: removeSubscriber,
+      __type__: WatcherType.WatcherMap,
     }),
     []
   );
