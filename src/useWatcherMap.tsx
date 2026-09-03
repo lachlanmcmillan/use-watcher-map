@@ -7,11 +7,7 @@ import {
 } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import { PathOf } from './pathOf';
-import {
-  getUniqueBatchedUpdates,
-  notifyPathSubscribers,
-  WatcherType,
-} from './shared';
+import { notifyPathSubscribers, WatcherType } from './shared';
 import { WatcherBase } from './watcherBase';
 
 export interface WatcherMap<T extends Record<string, any>>
@@ -45,7 +41,8 @@ export const useWatcherMap = <T extends Record<string, any>>(
 ): WatcherMap<T> => {
   const state = useRef(defaultValue);
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
-  const batchedUpdates = useRef<{ value: T; paths: string[] }[] | null>(null);
+  // paths updated during a batch. null when not batching.
+  const batchedPaths = useRef<Set<string> | null>(null);
 
   // --- helper fns ---
 
@@ -67,8 +64,10 @@ export const useWatcherMap = <T extends Record<string, any>>(
    */
   const notifySubscribers = (value: T, paths: string[]) => {
     // if we're in a batch, delay the notification until the batch is complete
-    if (batchedUpdates.current) {
-      batchedUpdates.current.push({ value, paths });
+    if (batchedPaths.current) {
+      for (const path of paths) {
+        batchedPaths.current.add(path);
+      }
       return;
     }
 
@@ -88,15 +87,17 @@ export const useWatcherMap = <T extends Record<string, any>>(
   }, []);
 
   const batch = useCallback((fn: () => void) => {
-    if (batchedUpdates.current) {
+    if (batchedPaths.current) {
       throw new Error('Cannot batch updates inside a batch');
     }
-    batchedUpdates.current = [];
+    batchedPaths.current = new Set();
     fn();
-    // make a list of unique updates, take the last one for each path
-    const updates = getUniqueBatchedUpdates(batchedUpdates.current);
-    batchedUpdates.current = null;
-    updates.forEach(({ value, paths }) => notifySubscribers(value, paths));
+    const paths = [...batchedPaths.current];
+    batchedPaths.current = null;
+    // notify once with the final state. notifyPathSubscribers guarantees each
+    // subscriber is called at most once per call, regardless of how many of
+    // the paths it matches.
+    notifySubscribers(state.current, paths);
   }, []);
 
   /**

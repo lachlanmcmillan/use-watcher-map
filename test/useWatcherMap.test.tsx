@@ -206,6 +206,25 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenCalledTimes(1);
     });
 
+    test('call the subscriber ONCE with the final state when a batch updates multiple paths', () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn);
+
+      result.current.batch(() => {
+        result.current.setPath('filter', 'completed');
+        result.current.setPath('nextId', 10);
+      });
+
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      // the state passed to the subscriber must include both updates
+      expect(mockFn).toHaveBeenLastCalledWith(
+        expect.objectContaining({ filter: 'completed', nextId: 10 })
+      );
+      expect(mockFn).toHaveBeenLastCalledWith(result.current.getState());
+    });
+
     test('no longer call the function after removing subscriber', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});
@@ -331,6 +350,26 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenCalledTimes(1);
       // should be the last value
       expect(mockFn).toHaveBeenCalledWith('update-3');
+    });
+
+    test('call the subscriber ONCE with the final value when a batch updates a path and its parent', () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn, 'todos.0.text');
+
+      result.current.batch(() => {
+        result.current.setPath('todos.0.text', 'intermediate');
+        result.current.setPath('todos.0', {
+          id: 1,
+          text: 'final',
+          completed: true,
+          tags: [],
+        });
+      });
+
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenLastCalledWith('final');
     });
 
     test('call the subscribers at the end of batch when clearPath is called', () => {

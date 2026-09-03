@@ -196,16 +196,3 @@ export const notifyPathSubscribers = <T>(
     }
   }
 };
-
-export const getUniqueBatchedUpdates = <T>(
-  batchedUpdates: { value: T; paths: string[] }[]
-) => {
-  const updates: { value: T; paths: string[] }[] = [];
-  for (let i = batchedUpdates.length - 1; i >= 0; i--) {
-    const update = batchedUpdates[i];
-    if (!updates.some(u => u.paths.every(p => update.paths.includes(p)))) {
-      updates.push(update);
-    }
-  }
-  return updates;
-};
