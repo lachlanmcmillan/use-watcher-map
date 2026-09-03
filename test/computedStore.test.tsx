@@ -269,7 +269,7 @@ describe('computedStore', () => {
   test('a plain object with watcher and path keys is a value, not a path subscription', () => {
     // #19: only a real watcher makes { watcher, path } a subscription
     const plain = { watcher: 'x', path: 'y' };
-    const computeFn = mock((value: unknown) => value);
+    const computeFn = mock((value: any) => value);
     const computed = computedStore(plain as any, computeFn);
 
     expect(computed.getState()).toBe(plain);

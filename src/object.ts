@@ -103,7 +103,7 @@ function removeKey(obj: any, key: string) {
  *
  * console.log(result) // 'apples'
  */
-export const getDeepPath = (obj: unknown, paths: string[]): any => {
+export const getDeepPath = (obj: any, paths: string[]): any => {
   // Handle undefined or null objects
   if (obj === undefined || obj === null || paths.length === 0) {
     return undefined;
@@ -134,7 +134,7 @@ export const getDeepPath = (obj: unknown, paths: string[]): any => {
  * isShallowEqual([{ a: 1 }], [{ a: 1 }])     // false — element objects differ by reference
  * isShallowEqual(null, null)                 // true
  */
-export const isShallowEqual = (left: unknown, right: unknown) => {
+export const isShallowEqual = (left: any, right: any) => {
   if (Object.is(left, right)) {
     return true;
   }
@@ -158,10 +158,7 @@ export const isShallowEqual = (left: unknown, right: unknown) => {
   return leftKeys.every(key => {
     return (
       Object.prototype.hasOwnProperty.call(right, key) &&
-      Object.is(
-        (left as Record<string, unknown>)[key],
-        (right as Record<string, unknown>)[key]
-      )
+      Object.is(left[key], right[key])
     );
   });
 };

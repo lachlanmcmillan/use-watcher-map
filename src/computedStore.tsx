@@ -52,7 +52,7 @@ export const computedStore = <T,>(
   let state: T | undefined = undefined;
   let hasState = false;
   // the dependency values `state` was computed from
-  let lastInputs: unknown = undefined;
+  let lastInputs: any = undefined;
   let subscribers: { path?: string; fn: Function }[] = [];
   let unsubscribeDependency: (() => void) | null = null;
 

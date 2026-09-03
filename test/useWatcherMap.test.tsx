@@ -308,6 +308,32 @@ describe('useWatcherMap', () => {
       expect(mockFn2).toHaveBeenCalledWith('completed');
     });
 
+    test('notify a length subscriber when a write past the end grows an array', () => {
+      const { result } = renderHook(() => useWatcherMap({ friends: ['a', 'b'] }));
+      const lengthFn = mock(() => {});
+      result.current.__addSubscriber__(lengthFn, 'friends.length');
+
+      // an in-bounds write leaves length alone
+      result.current.setPath('friends.0', 'z');
+      expect(lengthFn).not.toHaveBeenCalled();
+
+      result.current.setPath('friends.5', 'f');
+      expect(lengthFn).toHaveBeenCalledTimes(1);
+      expect(lengthFn).toHaveBeenCalledWith(6);
+    });
+
+    test('notify a length subscriber when clearPath splices an array element', () => {
+      const { result } = renderHook(() =>
+        useWatcherMap({ friends: ['a', 'b', 'c'] })
+      );
+      const lengthFn = mock(() => {});
+      result.current.__addSubscriber__(lengthFn, 'friends.length');
+
+      result.current.clearPath('friends.1');
+      expect(lengthFn).toHaveBeenCalledTimes(1);
+      expect(lengthFn).toHaveBeenCalledWith(2);
+    });
+
     test('call the subscriber, and parent subscribers when setPath is called', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});

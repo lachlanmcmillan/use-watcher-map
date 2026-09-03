@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { WatcherType } from './shared';
 
-export interface WatcherPrimitive<T extends unknown> {
+export interface WatcherPrimitive<T> {
   /** get the entire state */
   getState: () => T;
   /** override the entire state */
@@ -45,7 +45,7 @@ export interface WatcherPrimitive<T extends unknown> {
  * // To update:
  * isLoading.setState(true);
  */
-export const useWatcherPrimitive = <T extends unknown>(
+export const useWatcherPrimitive = <T,>(
   defaultValue: T
 ): WatcherPrimitive<T> => {
   const state = useRef(defaultValue);

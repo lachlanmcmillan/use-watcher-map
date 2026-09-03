@@ -309,6 +309,30 @@ describe('watcherStore', () => {
       expect(mockFn2).toHaveBeenCalledWith('completed');
     });
 
+    test('notify a length subscriber when a write past the end grows an array', () => {
+      const store = watcherStore({ friends: ['a', 'b'] });
+      const lengthFn = mock(() => {});
+      store.__addSubscriber__(lengthFn, 'friends.length');
+
+      // an in-bounds write leaves length alone
+      store.setPath('friends.0', 'z');
+      expect(lengthFn).not.toHaveBeenCalled();
+
+      store.setPath('friends.5', 'f');
+      expect(lengthFn).toHaveBeenCalledTimes(1);
+      expect(lengthFn).toHaveBeenCalledWith(6);
+    });
+
+    test('notify a length subscriber when clearPath splices an array element', () => {
+      const store = watcherStore({ friends: ['a', 'b', 'c'] });
+      const lengthFn = mock(() => {});
+      store.__addSubscriber__(lengthFn, 'friends.length');
+
+      store.clearPath('friends.1');
+      expect(lengthFn).toHaveBeenCalledTimes(1);
+      expect(lengthFn).toHaveBeenCalledWith(2);
+    });
+
     test('call the subscriber, and parent subscribers when setPath is called', () => {
       const store = watcherStore(initialState);
       const mockFn = mock(() => {});

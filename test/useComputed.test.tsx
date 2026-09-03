@@ -1200,19 +1200,16 @@ describe('useComputed', () => {
     });
 
     // deep equality check for arrays-of-strings (the deduplicated value)
-    const deepEqual = (a: unknown, b: unknown): boolean => {
+    const deepEqual = (a: any, b: any): boolean => {
       if (a === b) return true;
       if (typeof a !== typeof b) return false;
       if (Array.isArray(a) && Array.isArray(b)) {
         return a.length === b.length && a.every((v, i) => deepEqual(v, b[i]));
       }
       if (a && b && typeof a === 'object' && typeof b === 'object') {
-        const ak = Object.keys(a as object);
-        const bk = Object.keys(b as object);
-        return (
-          ak.length === bk.length &&
-          ak.every(k => deepEqual((a as any)[k], (b as any)[k]))
-        );
+        const ak = Object.keys(a);
+        const bk = Object.keys(b);
+        return ak.length === bk.length && ak.every(k => deepEqual(a[k], b[k]));
       }
       return a === b;
     };
@@ -1275,7 +1272,7 @@ describe('useComputed', () => {
   test('a plain object with watcher and path keys is a value, not a path subscription', () => {
     // #19: only a real watcher makes { watcher, path } a subscription
     const plain = { watcher: 'x', path: 'y' };
-    const computeFn = mock((value: unknown) => value);
+    const computeFn = mock((value: any) => value);
 
     const { result } = renderHook(() => useComputed(plain as any, computeFn));
 

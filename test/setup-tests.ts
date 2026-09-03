@@ -9,7 +9,7 @@ beforeAll(() => {
   });
 
   // Make DOM elements global
-  global.window = dom.window as unknown as Window & typeof globalThis;
+  global.window = dom.window as any;
   global.document = dom.window.document;
   global.navigator = dom.window.navigator;
   global.getComputedStyle = dom.window.getComputedStyle;
