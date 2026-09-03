@@ -118,6 +118,41 @@ describe('computedStore', () => {
     expect(result.current).toBe('Grace');
   });
 
+  test('recomputes when any of several path dependencies on the SAME store changes', () => {
+    const store = watcherStore({
+      user: { firstName: 'Ada', lastName: 'Lovelace' },
+      theme: 'dark',
+    });
+    const computeFn = mock(([firstName, lastName]: [string, string]) => ({
+      displayName: `${firstName} ${lastName}`,
+    }));
+    const computed = computedStore(
+      [
+        { watcher: store, path: 'user.firstName' },
+        { watcher: store, path: 'user.lastName' },
+      ],
+      computeFn
+    );
+
+    const { result } = renderHook(() => computed.usePath('displayName'));
+
+    expect(result.current).toBe('Ada Lovelace');
+
+    // a change to the first path recomputes
+    act(() => {
+      store.setPath('user.firstName', 'Grace');
+    });
+
+    expect(result.current).toBe('Grace Lovelace');
+
+    // a change to the second path alone must also recompute
+    act(() => {
+      store.setPath('user.lastName', 'Hopper');
+    });
+
+    expect(result.current).toBe('Grace Hopper');
+  });
+
   test('supports computed stores depending on other computed stores', () => {
     const store = watcherStore({ count: 2 });
     const doubled = computedStore(store, (state: { count: number }) => ({

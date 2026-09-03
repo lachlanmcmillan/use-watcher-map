@@ -16,8 +16,13 @@ export interface WatcherMap<T extends Record<string, any>>
 
   /** manually add a subscriber to the store */
   __addSubscriber__: (fn: Function, path?: PathOf<T>) => void;
-  /** manually remove a subscriber from the store */
-  __removeSubscriber__: (fn: Function) => void;
+  /**
+   * manually remove a subscriber from the store.
+   *
+   * if `path` is given, only that (fn, path) subscription is removed.
+   * if omitted, every subscription for `fn` is removed.
+   */
+  __removeSubscriber__: (fn: Function, path?: PathOf<T>) => void;
   /** the type of the watcher */
   __type__: typeof WatcherType.WatcherMap;
 }
@@ -47,13 +52,21 @@ export const useWatcherMap = <T extends Record<string, any>>(
   // --- helper fns ---
 
   const addSubscriber = useCallback((fn: Function, path?: string) => {
-    if (!subscribers.current.some(sub => sub.fn === fn)) {
+    // dedup on the (fn, path) pair. the same fn may subscribe to several
+    // paths, but never twice to the same path.
+    if (!subscribers.current.some(sub => sub.fn === fn && sub.path === path)) {
       subscribers.current.push({ path, fn });
     }
   }, []);
 
-  const removeSubscriber = useCallback((fn: Function) => {
-    subscribers.current = subscribers.current.filter(sub => sub.fn !== fn);
+  /**
+   * remove a subscriber. if `path` is given, only the (fn, path) pair is
+   * removed. if omitted, every subscription for `fn` is removed.
+   */
+  const removeSubscriber = useCallback((fn: Function, path?: string) => {
+    subscribers.current = subscribers.current.filter(
+      sub => !(sub.fn === fn && (path === undefined || sub.path === path))
+    );
   }, []);
 
   /**
@@ -173,7 +186,7 @@ export const useWatcherMap = <T extends Record<string, any>>(
     useEffect(() => {
       addSubscriber(fn, path);
 
-      return () => removeSubscriber(fn);
+      return () => removeSubscriber(fn, path);
     }, [path]);
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
@@ -182,7 +195,7 @@ export const useWatcherMap = <T extends Record<string, any>>(
     const subscribePath = useCallback(
       (fn: Function) => {
         addSubscriber(fn, path);
-        return () => removeSubscriber(fn);
+        return () => removeSubscriber(fn, path);
       },
       [path]
     );

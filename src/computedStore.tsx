@@ -28,7 +28,7 @@ type ComputedStore<T> = {
   watchState: (fn: (value: T) => void) => void;
   watchPath: (path: string, fn: (value: any) => void) => void;
   __addSubscriber__: (fn: Function, path?: string) => void;
-  __removeSubscriber__: (fn: Function) => void;
+  __removeSubscriber__: (fn: Function, path?: string) => void;
   __type__: typeof WatcherType.ComputedStore;
 };
 
@@ -91,15 +91,23 @@ export const computedStore = <T,>(
   };
 
   const addSubscriber = (fn: Function, path?: string) => {
-    if (!subscribers.some(sub => sub.fn === fn)) {
+    // dedup on the (fn, path) pair. the same fn may subscribe to several
+    // paths, but never twice to the same path.
+    if (!subscribers.some(sub => sub.fn === fn && sub.path === path)) {
       subscribers.push({ path, fn });
     }
 
     mount();
   };
 
-  const removeSubscriber = (fn: Function) => {
-    subscribers = subscribers.filter(sub => sub.fn !== fn);
+  /**
+   * remove a subscriber. if `path` is given, only the (fn, path) pair is
+   * removed. if omitted, every subscription for `fn` is removed.
+   */
+  const removeSubscriber = (fn: Function, path?: string) => {
+    subscribers = subscribers.filter(
+      sub => !(sub.fn === fn && (path === undefined || sub.path === path))
+    );
     unmount();
   };
 
@@ -118,7 +126,7 @@ export const computedStore = <T,>(
     if (!cached) {
       cached = (fn: Function) => {
         addSubscriber(fn, path);
-        return () => removeSubscriber(fn);
+        return () => removeSubscriber(fn, path);
       };
       pathSubscribers.set(path, cached);
     }
@@ -162,7 +170,7 @@ export const computedStore = <T,>(
     useEffect(() => {
       addSubscriber(fn, path);
 
-      return () => removeSubscriber(fn);
+      return () => removeSubscriber(fn, path);
     }, [path]);
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);

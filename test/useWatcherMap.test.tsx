@@ -379,6 +379,29 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenCalledWith('update-3');
     });
 
+    test('call the same function subscribed to two different paths when either changes', () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn, 'filter');
+      result.current.__addSubscriber__(mockFn, 'nextId');
+
+      result.current.setPath('filter', 'completed');
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenLastCalledWith('completed');
+
+      result.current.setPath('nextId', 10);
+      expect(mockFn).toHaveBeenCalledTimes(2);
+      expect(mockFn).toHaveBeenLastCalledWith(10);
+
+      // removing one path leaves the other subscribed
+      result.current.__removeSubscriber__(mockFn, 'filter');
+      result.current.setPath('filter', 'active');
+      expect(mockFn).toHaveBeenCalledTimes(2);
+      result.current.setPath('nextId', 11);
+      expect(mockFn).toHaveBeenCalledTimes(3);
+    });
+
     test('call the subscriber ONCE with the final value when a batch updates a path and its parent', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});

@@ -425,6 +425,43 @@ describe('useComputed', () => {
     expect(computeFn).toHaveBeenCalledTimes(2);
   });
 
+  test('recompute when any of several path subscriptions on the SAME store changes', () => {
+    const store = watcherStore({
+      user: { firstName: 'Ada', lastName: 'Lovelace' },
+      theme: 'dark',
+    });
+    const computeFn = mock(([a, b]: [string, string]) => `${a} ${b}`);
+
+    const { result } = renderHook(() =>
+      useComputed(
+        [
+          { watcher: store, path: 'user.firstName' },
+          { watcher: store, path: 'user.lastName' },
+        ],
+        computeFn
+      )
+    );
+
+    expect(result.current.getState()).toBe('Ada Lovelace');
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    // a change to the first path recomputes
+    act(() => {
+      store.setPath('user.firstName', 'Grace');
+    });
+
+    expect(result.current.getState()).toBe('Grace Lovelace');
+    expect(computeFn).toHaveBeenCalledTimes(2);
+
+    // a change to the second path alone must also recompute
+    act(() => {
+      store.setPath('user.lastName', 'Hopper');
+    });
+
+    expect(result.current.getState()).toBe('Grace Hopper');
+    expect(computeFn).toHaveBeenCalledTimes(3);
+  });
+
   test('support a mixed array of stores and path subscriptions', () => {
     const storeA = watcherStore({ multiplier: 3 });
     const storeB = watcherStore({ value: 5, label: 'count' });

@@ -34,8 +34,13 @@ export interface WatcherComputed<T> {
 
   /** manually add a subscriber to the computed store */
   __addSubscriber__: (fn: Function, path?: string) => void;
-  /** manually remove a subscriber from the computed store */
-  __removeSubscriber__: (fn: Function) => void;
+  /**
+   * manually remove a subscriber from the computed store.
+   *
+   * if `path` is given, only that (fn, path) subscription is removed.
+   * if omitted, every subscription for `fn` is removed.
+   */
+  __removeSubscriber__: (fn: Function, path?: string) => void;
   /** the type of the watcher */
   __type__: typeof WatcherType.WatcherComputed;
 }
@@ -117,13 +122,21 @@ export function useComputed<T>(
   // --- helper fns ---
 
   const addSubscriber = useCallback((fn: Function, path?: string) => {
-    if (!subscribers.current.some(sub => sub.fn === fn)) {
+    // dedup on the (fn, path) pair. the same fn may subscribe to several
+    // paths, but never twice to the same path.
+    if (!subscribers.current.some(sub => sub.fn === fn && sub.path === path)) {
       subscribers.current.push({ path, fn });
     }
   }, []);
 
-  const removeSubscriber = useCallback((fn: Function) => {
-    subscribers.current = subscribers.current.filter(sub => sub.fn !== fn);
+  /**
+   * remove a subscriber. if `path` is given, only the (fn, path) pair is
+   * removed. if omitted, every subscription for `fn` is removed.
+   */
+  const removeSubscriber = useCallback((fn: Function, path?: string) => {
+    subscribers.current = subscribers.current.filter(
+      sub => !(sub.fn === fn && (path === undefined || sub.path === path))
+    );
   }, []);
 
   const notifySubscribers = (value: T, paths: string[]) => {
@@ -196,7 +209,7 @@ export function useComputed<T>(
     useEffect(() => {
       addSubscriber(fn, path);
 
-      return () => removeSubscriber(fn);
+      return () => removeSubscriber(fn, path);
     }, [path]);
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
@@ -205,7 +218,7 @@ export function useComputed<T>(
     const subscribePath = useCallback(
       (fn: Function) => {
         addSubscriber(fn, path);
-        return () => removeSubscriber(fn);
+        return () => removeSubscriber(fn, path);
       },
       [path]
     );

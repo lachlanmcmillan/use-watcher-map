@@ -23,7 +23,7 @@ type WatcherDependencyTarget = {
     path?: any,
     opts?: { skipMountTracking?: boolean }
   ) => void;
-  __removeSubscriber__: (fn: Function) => void;
+  __removeSubscriber__: (fn: Function, path?: any) => void;
   onMount?: unknown;
   __type__: WatcherType;
 };
@@ -109,7 +109,9 @@ export const subscribeToDependency = (
     target.__addSubscriber__(fn, dependency.path as never, {
       skipMountTracking: true,
     });
-    return () => target.__removeSubscriber__(fn);
+    // remove only this path's subscription. the same fn may also be
+    // subscribed to other paths on the same watcher.
+    return () => target.__removeSubscriber__(fn, dependency.path);
   }
 
   if (isWatcherDependency(dependency)) {

@@ -367,6 +367,22 @@ describe('watcherStore', () => {
       expect(mockFn).toHaveBeenCalledWith('update-3');
     });
 
+    test('call the same function subscribed to two different paths when either changes', () => {
+      const store = watcherStore(initialState);
+      const mockFn = mock(() => {});
+
+      store.__addSubscriber__(mockFn, 'filter');
+      store.__addSubscriber__(mockFn, 'nextId');
+
+      store.setPath('filter', 'completed');
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenLastCalledWith('completed');
+
+      store.setPath('nextId', 10);
+      expect(mockFn).toHaveBeenCalledTimes(2);
+      expect(mockFn).toHaveBeenLastCalledWith(10);
+    });
+
     test('call the subscriber ONCE with the final value when a batch updates a path and its parent', () => {
       const store = watcherStore(initialState);
       const mockFn = mock(() => {});
@@ -915,6 +931,38 @@ describe('watcherStore', () => {
       store.__addSubscriber__(mockSubscriber2, 'filter');
 
       expect(onMountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('track mount and unmount per path when the same fn subscribes to two paths', () => {
+      const store = watcherStore(initialState);
+      const unmountFilter = mock(() => {});
+      const unmountNextId = mock(() => {});
+      const onMountPathFn = mock((path: string) =>
+        path === 'filter' ? unmountFilter : unmountNextId
+      );
+
+      store.onMountPath(onMountPathFn);
+
+      const subscriber = mock(() => {});
+      store.__addSubscriber__(subscriber, 'filter');
+      store.__addSubscriber__(subscriber, 'nextId');
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(2);
+
+      // removing one path leaves the other subscribed
+      store.__removeSubscriber__(subscriber, 'filter');
+      expect(unmountFilter).toHaveBeenCalledTimes(1);
+      expect(unmountNextId).not.toHaveBeenCalled();
+
+      store.setPath('nextId', 10);
+      expect(subscriber).toHaveBeenCalledTimes(1);
+
+      // removing with no path removes everything left for that fn
+      store.__removeSubscriber__(subscriber);
+      expect(unmountNextId).toHaveBeenCalledTimes(1);
+
+      store.setPath('nextId', 11);
+      expect(subscriber).toHaveBeenCalledTimes(1);
     });
 
     test('call onMountPath for each distinct path', () => {

@@ -49,8 +49,13 @@ export interface WatcherStore<T extends Record<string, any>>
     path?: PathOf<T>,
     opts?: { skipMountTracking?: boolean }
   ) => void;
-  /** manually remove a subscriber from the store */
-  __removeSubscriber__: (fn: Function) => void;
+  /**
+   * manually remove a subscriber from the store.
+   *
+   * if `path` is given, only that (fn, path) subscription is removed.
+   * if omitted, every subscription for `fn` is removed.
+   */
+  __removeSubscriber__: (fn: Function, path?: PathOf<T>) => void;
   __type__: typeof WatcherType.WatcherStore;
 }
 
@@ -97,6 +102,13 @@ export const watcherStore = <T extends Record<string, any>>(
     path?: string,
     opts?: { skipMountTracking?: boolean }
   ) => {
+    // dedup on the (fn, path) pair. the same fn may subscribe to several
+    // paths (eg. useComputed fanning one update fn out to multiple path
+    // dependencies on this store), but never twice to the same path.
+    if (subscribers.some(sub => sub.fn === fn && sub.path === path)) {
+      return;
+    }
+
     const isFirstSubscriber =
       subscribers.filter(s => !s.opts?.skipMountTracking).length === 0;
     if (
@@ -120,30 +132,39 @@ export const watcherStore = <T extends Record<string, any>>(
       }
     }
 
-    if (!subscribers.some(sub => sub.fn === fn)) {
-      subscribers.push({ path, fn, opts });
-    }
+    subscribers.push({ path, fn, opts });
   };
 
-  const removeSubscriber = (fn: Function) => {
-    const removedSubscriber = subscribers.find(sub => sub.fn === fn);
-    subscribers = subscribers.filter(sub => sub.fn !== fn);
+  /**
+   * remove a subscriber. if `path` is given, only the (fn, path) pair is
+   * removed. if omitted, every subscription for `fn` is removed.
+   */
+  const removeSubscriber = (fn: Function, path?: string) => {
+    const isMatch = (sub: { fn: Function; path?: string }) =>
+      sub.fn === fn && (path === undefined || sub.path === path);
 
-    const removedPath = removedSubscriber?.path;
-    if (removedPath && !removedSubscriber?.opts?.skipMountTracking) {
-      const isLastPathSubscriber =
-        trackedPathSubscriberCount(removedPath) === 0;
-      const onUnmountPathFn = onUnmountPathFns.get(removedPath);
-      if (isLastPathSubscriber && typeof onUnmountPathFn === 'function') {
-        onUnmountPathFn();
-        onUnmountPathFns.delete(removedPath);
+    const removed = subscribers.filter(isMatch);
+    if (removed.length === 0) {
+      return;
+    }
+    subscribers = subscribers.filter(sub => !isMatch(sub));
+
+    for (const sub of removed) {
+      if (sub.path && !sub.opts?.skipMountTracking) {
+        const isLastPathSubscriber = trackedPathSubscriberCount(sub.path) === 0;
+        const onUnmountPathFn = onUnmountPathFns.get(sub.path);
+        if (isLastPathSubscriber && typeof onUnmountPathFn === 'function') {
+          onUnmountPathFn();
+          onUnmountPathFns.delete(sub.path);
+        }
       }
     }
 
+    const removedTracked = removed.some(s => !s.opts?.skipMountTracking);
     const isLastSubscriber =
       subscribers.filter(s => !s.opts?.skipMountTracking).length === 0;
     if (
-      !removedSubscriber?.opts?.skipMountTracking &&
+      removedTracked &&
       isLastSubscriber &&
       typeof onUnmountFn === 'function'
     ) {
@@ -186,7 +207,7 @@ export const watcherStore = <T extends Record<string, any>>(
     if (!cached) {
       cached = (fn: Function) => {
         addSubscriber(fn, path);
-        return () => removeSubscriber(fn);
+        return () => removeSubscriber(fn, path);
       };
       pathSubscribers.set(path, cached);
     }
@@ -294,7 +315,7 @@ export const watcherStore = <T extends Record<string, any>>(
     useEffect(() => {
       addSubscriber(fn, path);
 
-      return () => removeSubscriber(fn);
+      return () => removeSubscriber(fn, path);
     }, [path]);
 
   const onMount = (fn: () => void) => {
