@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 6.1.0
+
+- **New** `watcherStore.onMountPath(fn)`
+
+  Catch-all path lifecycle, parallel to store-level `onMount(fn)`. Called when
+  any path is subscribed to for the first time (`usePath` / `watchPath`). `fn`
+  receives that path. Return a cleanup function to run when the last subscriber
+  to that path unmounts.
+
+  Each path has its own 0 → 1 / 1 → 0 lifecycle. Whole-state subscribers
+  (`useState` / `watchState`) do not trigger it. `skipMountTracking` subscribers
+  (e.g. `computedStore`) are ignored. Only one `onMountPath` callback is kept.
+
+  ```typescript
+  type ItemId = string;
+  type ItemData = Record<string, any>;
+  const $store = watcherStore<Record<ItemId, ItemData>>({});
+
+  $store.onMountPath(path => {
+    const controller = new AbortController();
+    fetchItem(path, { signal: controller.signal }).then(data => {
+      $store.setPath(path, data);
+    });
+    return () => controller.abort();
+  });
+  ```
+
 ## 6.0.0-beta.5
 
 - **New** `useComputed` accepts non-watcher dependencies
@@ -11,7 +38,7 @@
   ```typescript
   const MyComponent = ({ $gross, includeTax }: { $gross: WatcherPrimitive<number>, includeTax: boolean }) => {
     // total will recompute when $gross or includeTax changes
-    const total = useComputed([$gross, includeTax], ([gross, includeTax]) => 
+    const total = useComputed([$gross, includeTax], ([gross, includeTax]) =>
       gross * (includeTax ? 1.1 : 1)
     );
   ```
