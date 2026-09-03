@@ -1,7 +1,7 @@
 # use-watcher-map
 
 React state management with path-based subscriptions for fine-grained re-renders.
-v6.1.0 | React 19.2.8+ peer dependency | TypeScript-first | Zero runtime dependencies.
+v7.0.0 | React 19.2.8+ peer dependency | TypeScript-first | Zero runtime dependencies.
 
 ## Architecture
 

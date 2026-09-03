@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 6.1.0
+## 7.0.0
 
 - **New** `watcherStore.onMountPath(fn)`
 
@@ -26,6 +26,35 @@
     return () => controller.abort();
   });
   ```
+
+- **New** exported types `ComputedStore`, `SetTypeAtPath`, `MountFn`,
+  `MountPathFn` and `CleanupFn`
+
+- **Breaking** React peer dependency is now `^19.2.8`
+
+- **Breaking** `batch` is atomic - if the callback throws, every update made inside it is rolled back
+
+- **Breaking** `PathOf<T>` no longer includes array methods, eg. `map`, `push`, etc.
+
+- **Fix** `TypeAtPath<T, P>` properly handles optional or nullable parents
+
+- **Fix** `clearPath` on an array index splices the element
+
+- **Fix** subscribers are deduplicated on the `(fn, path)` pair
+
+- **Fix** `batch` Subscribers are now notified once, with the final state.
+
+- **Fix** path matching is segment-based. `todos.1` no longer matches
+  `todos.10`, and `user` no longer matches `username`.
+
+- **Fix** `setState` notifies subscribers of removed top-level keys with
+  `undefined`.
+
+- **Fix** React memory leak on usePath
+
+- **Fix** a array `length` subscriber is notified properly
+
+- **Fix** improve computed dependency identification.
 
 ## 6.0.0-beta.5
 
