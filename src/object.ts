@@ -77,6 +77,20 @@ function copyObj(obj: any): any {
 }
 
 /**
+ * Remove a key from an (already copied) object or array in place.
+ *
+ * For arrays with a numeric key the element is spliced out so the array
+ * closes the gap, rather than `delete` leaving a sparse hole.
+ */
+function removeKey(obj: any, key: string) {
+  if (Array.isArray(obj) && /^\d+$/.test(key)) {
+    obj.splice(Number(key), 1);
+  } else {
+    delete obj[key];
+  }
+}
+
+/**
  * Get a value at a deep path
  *
  * @example
@@ -157,6 +171,9 @@ export const isShallowEqual = (left: unknown, right: unknown) => {
  *
  * Similar to setDeepPathClone, but deletes the property at the end of the path.
  * If the path does not exist, the original object reference is returned.
+ * If the final segment is an array index, the element is removed and later
+ * elements shift down, eg. deleting ['items', '1'] from a 3-element array
+ * leaves a 2-element array, not a hole.
  *
  * @example
  * let initial = {
@@ -200,7 +217,7 @@ export const deleteDeepPathClone = (
   // to update the reference
   if (rest.length === 0) {
     const result = copyObj(obj);
-    delete result[first];
+    removeKey(result, first);
     return result;
   }
 
@@ -227,7 +244,7 @@ export const deleteDeepPathClone = (
     // to update the reference
     const result = copyObj(obj);
     if (removeEmptyObjects && Object.keys(newNestedValue).length === 0) {
-      delete result[first];
+      removeKey(result, first);
     } else {
       result[first] = newNestedValue;
     }

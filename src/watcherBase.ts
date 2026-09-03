@@ -9,7 +9,10 @@ export interface WatcherBase<T extends Record<string, any>> {
   setState: (data: T) => void;
   /** update a specific path */
   setPath: <P extends PathOf<T>>(path: P, value: SetTypeAtPath<T, P>) => void;
-  /** clear a specific path */
+  /**
+   * clear a specific path. if the path ends at an array index, the element
+   * is spliced.
+   */
   clearPath: (path: PathOf<T>, removeEmptyObjects?: boolean) => void;
   /**
    * make multiple updates and call notifiers once at the end.

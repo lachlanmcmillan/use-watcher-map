@@ -373,6 +373,35 @@ describe('deleteDeepPathClone', () => {
     expect(initial.a.b === result.a.b).toBe(false); // Nested path cloned
   });
 
+  it('should remove an array element rather than leave a sparse hole', () => {
+    const initial = {
+      items: [
+        { id: '101', name: 'item1' },
+        { id: '102', name: 'item2' },
+        { id: '103', name: 'item3' },
+      ],
+    };
+
+    // the path ends AT the array index, so the element itself is deleted
+    const result = deleteDeepPathClone(initial, ['items', '1']);
+
+    // the element is gone and the array closes the gap
+    expect(result.items).toEqual([
+      { id: '101', name: 'item1' },
+      { id: '103', name: 'item3' },
+    ]);
+    expect(result.items.length).toBe(2);
+    // no hole: every index is a real element
+    expect(1 in result.items).toBe(true);
+    expect(result.items[1].id).toBe('103');
+
+    // Immutability checks
+    expect(initial.items.length).toBe(3); // Original unchanged
+    expect(initial.items === result.items).toBe(false);
+    expect(initial.items[0] === result.items[0]).toBe(true);
+    expect(initial.items[2] === result.items[1]).toBe(true); // shifted, same reference
+  });
+
   it('should handle deleting from arrays', () => {
     const initial = {
       items: [
