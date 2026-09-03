@@ -20,4 +20,4 @@ export {
 export { watcherStore } from './watcherStore';
 export type { WatcherStore } from './watcherStore';
 
-export type { PathOf, TypeAtPath } from './pathOf';
+export type { PathOf, TypeAtPath, SetTypeAtPath } from './pathOf';

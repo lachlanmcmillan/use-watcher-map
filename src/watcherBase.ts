@@ -1,4 +1,4 @@
-import type { PathOf, TypeAtPath } from './pathOf';
+import type { PathOf, SetTypeAtPath, TypeAtPath } from './pathOf';
 
 export interface WatcherBase<T extends Record<string, any>> {
   /** get the entire state */
@@ -8,7 +8,7 @@ export interface WatcherBase<T extends Record<string, any>> {
   /** override the entire state */
   setState: (data: T) => void;
   /** update a specific path */
-  setPath: <P extends PathOf<T>>(path: P, value: TypeAtPath<T, P>) => void;
+  setPath: <P extends PathOf<T>>(path: P, value: SetTypeAtPath<T, P>) => void;
   /** clear a specific path */
   clearPath: (path: PathOf<T>, removeEmptyObjects?: boolean) => void;
   /**
