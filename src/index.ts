@@ -18,6 +18,11 @@ export {
 } from './object';
 
 export { watcherStore } from './watcherStore';
-export type { WatcherStore } from './watcherStore';
+export type {
+  WatcherStore,
+  MountFn,
+  MountPathFn,
+  CleanupFn,
+} from './watcherStore';
 
 export type { PathOf, TypeAtPath, SetTypeAtPath } from './pathOf';

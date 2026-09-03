@@ -8,6 +8,15 @@ import {
   WatcherType,
 } from './shared';
 
+/** returned from a mount fn to run when the matching unmount happens */
+export type CleanupFn = () => void;
+/** passed to onMount. may return a cleanup fn. */
+export type MountFn = () => void | CleanupFn;
+/** passed to onMountPath. receives the path, may return a cleanup fn. */
+export type MountPathFn<T extends Record<string, any>> = (
+  path: PathOf<T>
+) => void | CleanupFn;
+
 export interface WatcherStore<T extends Record<string, any>>
   extends WatcherBase<T> {
   /**
@@ -21,7 +30,7 @@ export interface WatcherStore<T extends Record<string, any>>
    * Only one onMount function is kept, so calling onMount multiple times will
    * override the previous function.
    */
-  onMount: (mountFn: () => void) => void;
+  onMount: (mountFn: MountFn) => void;
   /**
    * onMountPath will call the supplied function when a path is subscribed to
    * for the first time (`usePath` / `watchPath`).
@@ -38,7 +47,7 @@ export interface WatcherStore<T extends Record<string, any>>
    * Only one onMountPath function is kept, so calling onMountPath multiple
    * times will override the previous function.
    */
-  onMountPath: (mountFn: (path: PathOf<T>) => void) => void;
+  onMountPath: (mountFn: MountPathFn<T>) => void;
 
   /* --- internal fns, do not call directly, exported for testing --- */
 
@@ -90,10 +99,10 @@ export const watcherStore = <T extends Record<string, any>>(
   }[] = [];
   // paths updated during a batch. null when not batching.
   let batchedPaths: Set<string> | null = null;
-  let onMountFn: (() => void) | null = null;
-  let onUnmountFn: any | null = null;
-  let onMountPathFn: ((path: string) => void) | null = null;
-  const onUnmountPathFns = new Map<string, () => void>();
+  let onMountFn: MountFn | null = null;
+  let onUnmountFn: CleanupFn | null = null;
+  let onMountPathFn: ((path: string) => void | CleanupFn) | null = null;
+  const onUnmountPathFns = new Map<string, CleanupFn>();
 
   const trackedPathSubscriberCount = (path: string) =>
     subscribers.filter(s => !s.opts?.skipMountTracking && s.path === path)
@@ -321,12 +330,12 @@ export const watcherStore = <T extends Record<string, any>>(
       return () => removeSubscriber(fn, path);
     }, [path]);
 
-  const onMount = (fn: () => void) => {
+  const onMount = (fn: MountFn) => {
     onMountFn = fn;
   };
 
-  const onMountPath = (fn: (path: PathOf<T>) => void) => {
-    onMountPathFn = fn as (path: string) => void;
+  const onMountPath = (fn: MountPathFn<T>) => {
+    onMountPathFn = fn as (path: string) => void | CleanupFn;
   };
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
