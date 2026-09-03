@@ -172,10 +172,7 @@ export function useComputed<T>(
   // changed) still resubscribe; the new snapshot was already computed above.
   useEffect(() => {
     const updateComputed = () => {
-      const nextState = compute(
-        getDependencyValue(dependency),
-        state.current
-      );
+      const nextState = compute(getDependencyValue(dependency), state.current);
       if (isShallowEqual(state.current, nextState)) {
         return;
       }

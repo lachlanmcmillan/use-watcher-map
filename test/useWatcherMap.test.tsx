@@ -309,7 +309,9 @@ describe('useWatcherMap', () => {
     });
 
     test('notify a length subscriber when a write past the end grows an array', () => {
-      const { result } = renderHook(() => useWatcherMap({ friends: ['a', 'b'] }));
+      const { result } = renderHook(() =>
+        useWatcherMap({ friends: ['a', 'b'] })
+      );
       const lengthFn = mock(() => {});
       result.current.__addSubscriber__(lengthFn, 'friends.length');
 
