@@ -57,9 +57,64 @@ const example13: PathOf<MyType> = 'sub.a.b'; // sub-type-access
 const example84: PathOf<MyType> = 'record.key1'; // record access
 
 // expected errors
-// const badExample10: PathOf<MyType> = 'color'; // expected error
-// const badExample11: PathOf<MyType> = 'address.friends.sam'; // expected error
-// const badExample12: PathOf<MyType> = 'emergencyContact.age'; // expected error
+// @ts-expect-error - no such key
+const badExample10: PathOf<MyType> = 'color';
+// @ts-expect-error - no such nested key
+const badExample11: PathOf<MyType> = 'address.friends.sam';
+// @ts-expect-error - no such key on emergencyContact
+const badExample12: PathOf<MyType> = 'emergencyContact.age';
+// members inherited from Object.prototype are not declared keys, so not paths
+// @ts-expect-error
+const badProtoExample01: PathOf<MyType> = 'address.toString';
+// @ts-expect-error
+const badProtoExample02: PathOf<MyType> = 'address.constructor';
+// @ts-expect-error
+const badProtoExample03: PathOf<MyType> = 'address.hasOwnProperty';
+// @ts-expect-error
+const badProtoExample04: PathOf<MyType> = 'toString';
+// @ts-expect-error
+const badProtoExample05: PathOf<MyType> = 'sub.a.valueOf';
+
+// ----------------------------------------------------------------------------
+// ARRAYS
+// ----------------------------------------------------------------------------
+
+// Arrays offer numeric indices and `length` as paths. Array METHODS are not
+// paths: `friends.map` is not state, and setPath('friends.push', fn) would
+// write a `push` property onto the array.
+interface ListType {
+  friends: string[];
+  todos: { text: string; tags: string[] }[];
+  matrix: number[][];
+  readonlyIds: readonly number[];
+  pair: [number, string];
+}
+
+// indices and length are valid
+const arrExample01: PathOf<ListType> = 'friends.0';
+const arrExample02: PathOf<ListType> = 'friends.length';
+const arrExample03: PathOf<ListType> = 'todos.3.text';
+const arrExample04: PathOf<ListType> = 'todos.3.tags.1';
+const arrExample05: PathOf<ListType> = 'todos.3.tags.length';
+const arrExample06: PathOf<ListType> = 'matrix.0.1'; // array of arrays
+const arrExample07: PathOf<ListType> = 'readonlyIds.0'; // readonly array
+const arrExample08: PathOf<ListType> = 'pair.1'; // tuple
+
+// method names are not valid paths
+// @ts-expect-error - find is an array method, not a path
+const badArrExample01: PathOf<ListType> = 'friends.find';
+// @ts-expect-error - push is an array method, not a path
+const badArrExample02: PathOf<ListType> = 'friends.push';
+// @ts-expect-error - map on a nested array is not a path either
+const badArrExample03: PathOf<ListType> = 'todos.0.tags.map';
+// @ts-expect-error - readonly arrays have methods too
+const badArrExample04: PathOf<ListType> = 'readonlyIds.includes';
+
+// TypeAtPath through arrays
+const arrTypeExample01: TypeAtPath<ListType, 'friends.0'> = 'Alice'; // string
+const arrTypeExample02: TypeAtPath<ListType, 'friends.length'> = 2; // number
+const arrTypeExample03: TypeAtPath<ListType, 'todos.0.tags.1'> = 'tag'; // string
+const arrTypeExample04: TypeAtPath<ListType, 'matrix.0.1'> = 7; // number
 
 // Test TypeAtPath examples - corresponding to PathOf examples above
 const typeExample01: TypeAtPath<MyType, 'name'> = 'John Doe'; // string
