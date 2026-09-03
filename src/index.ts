@@ -8,7 +8,7 @@ export { useComputed } from './useComputed';
 export type { WatcherComputed } from './useComputed';
 
 export { computedStore } from './computedStore';
-export type { ComputedStoreDependency } from './computedStore';
+export type { ComputedStore, ComputedStoreDependency } from './computedStore';
 
 export {
   getDeepPath,

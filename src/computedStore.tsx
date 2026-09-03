@@ -21,7 +21,7 @@ export type ComputedStoreDependency =
   | ComputedStore<any>
   | StorePathSubscription;
 
-type ComputedStore<T> = {
+export type ComputedStore<T> = {
   getState: () => T;
   getPath: (path: string) => any;
   useState: () => T;
