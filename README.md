@@ -129,6 +129,12 @@ appStore.onMount(() => {
   console.log('Store mounted');
   return () => console.log('Store unmounted');
 });
+
+// Optional: runs when a specific path is first subscribed to
+appStore.onMountPath(path => {
+  fetchItem(path);
+  return () => abortItemFetch(path);
+});
 ```
 
 ```tsx
@@ -151,9 +157,10 @@ function ThemeToggle() {
 
 #### Additional Methods (beyond WatcherMap)
 
-| Method        | Description                                                                 |
-| ------------- | --------------------------------------------------------------------------- |
-| `onMount(fn)` | Called when first subscriber mounts. Return a cleanup function for unmount. |
+| Method            | Description                                                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `onMount(fn)`     | Called when first subscriber mounts. Return a cleanup function for unmount.                                                   |
+| `onMountPath(fn)` | Called when any path is first subscribed to. `fn` receives the path. Return a cleanup function for last unmount of that path. |
 
 ---
 
@@ -259,12 +266,12 @@ function Logger({ watcher }: { watcher: WatcherMap<State> }) {
 
 ## When to Use What
 
-|                        | `useWatcherMap` | `useWatcher`               | `watcherStore`      |
-| ---------------------- | --------------- | -------------------------- | ------------------- |
-| **Use for**            | Nested objects  | Primitives / simple values | Global shared state |
-| **Created in**         | React component | React component            | Module scope        |
-| **Path subscriptions** | Yes             | No                         | Yes                 |
-| **Lifecycle hooks**    | No              | No                         | `onMount`           |
+|                        | `useWatcherMap` | `useWatcher`               | `watcherStore`           |
+| ---------------------- | --------------- | -------------------------- | ------------------------ |
+| **Use for**            | Nested objects  | Primitives / simple values | Global shared state      |
+| **Created in**         | React component | React component            | Module scope             |
+| **Path subscriptions** | Yes             | No                         | Yes                      |
+| **Lifecycle hooks**    | No              | No                         | `onMount`, `onMountPath` |
 
 ---
 

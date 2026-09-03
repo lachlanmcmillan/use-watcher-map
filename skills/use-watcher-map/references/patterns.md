@@ -41,14 +41,20 @@ export function Form() {
 function NameField({ $form }: { $form: WatcherMap<FormState> }) {
   const name = $form.usePath('user.name');
   return (
-    <input value={name} onChange={e => $form.setPath('user.name', e.target.value)} />
+    <input
+      value={name}
+      onChange={e => $form.setPath('user.name', e.target.value)}
+    />
   );
 }
 
 function EmailField({ $form }: { $form: WatcherMap<FormState> }) {
   const email = $form.usePath('user.email');
   return (
-    <input value={email} onChange={e => $form.setPath('user.email', e.target.value)} />
+    <input
+      value={email}
+      onChange={e => $form.setPath('user.email', e.target.value)}
+    />
   );
 }
 
@@ -71,8 +77,12 @@ export const $app = watcherStore({
   filter: 'all' as 'all' | 'fruit' | 'veg',
 });
 
-export const $visible = computedStore($app, (state: { items: Item[]; filter: 'all' | 'fruit' | 'veg' }) =>
-  state.filter === 'all' ? state.items : state.items.filter(i => i.type === state.filter)
+export const $visible = computedStore(
+  $app,
+  (state: { items: Item[]; filter: 'all' | 'fruit' | 'veg' }) =>
+    state.filter === 'all'
+      ? state.items
+      : state.items.filter(i => i.type === state.filter)
 );
 
 export function addItem(item: Item) {
@@ -110,7 +120,10 @@ const $veg = useComputed({ watcher: $items, path: 'items' }, items =>
   items.filter(i => i.type === 'veg')
 );
 const $hasVeg = useComputed($veg, veg => veg.length > 0);
-const $ok = useComputed([$hasVeg, $hasFruit], ([hasVeg, hasFruit]) => hasVeg && hasFruit);
+const $ok = useComputed(
+  [$hasVeg, $hasFruit],
+  ([hasVeg, hasFruit]) => hasVeg && hasFruit
+);
 ```
 
 ## Primitive watchers as computed deps
@@ -167,7 +180,10 @@ Prefer stable `id` keys in lists. After `filter`/`splice`, index-based `usePath`
 ## Actions live next to the store
 
 ```tsx
-export const $auth = watcherStore({ userId: null as number | null, token: null as string | null });
+export const $auth = watcherStore({
+  userId: null as number | null,
+  token: null as string | null,
+});
 
 export function login(userId: number, token: string) {
   $auth.batch(() => {
@@ -191,7 +207,10 @@ Put the watcher in context. Do **not** subscribe in the provider.
 const FormCtx = createContext<WatcherMap<FormState> | null>(null);
 
 function FormProvider({ children }: { children: React.ReactNode }) {
-  const $form = useWatcherMap<FormState>({ user: { name: '', email: '' }, submitted: false });
+  const $form = useWatcherMap<FormState>({
+    user: { name: '', email: '' },
+    submitted: false,
+  });
   return <FormCtx.Provider value={$form}>{children}</FormCtx.Provider>;
 }
 
@@ -204,6 +223,11 @@ function useForm() {
 function NameInput() {
   const $form = useForm();
   const name = $form.usePath('user.name');
-  return <input value={name} onChange={e => $form.setPath('user.name', e.target.value)} />;
+  return (
+    <input
+      value={name}
+      onChange={e => $form.setPath('user.name', e.target.value)}
+    />
+  );
 }
 ```

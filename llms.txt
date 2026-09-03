@@ -17,7 +17,7 @@ React hook. For primitive/simple values.
 Methods: getState(), setState(value), useState(), watchState(fn)
 
 ### watcherStore<T>(initialState): WatcherStore<T>
-NOT a hook. Module-level global store. Same API as useWatcherMap + onMount(fn).
+NOT a hook. Module-level global store. Same API as useWatcherMap + onMount(fn) + onMountPath(fn).
 
 ## Path System
 

@@ -22,6 +22,23 @@ export interface WatcherStore<T extends Record<string, any>>
    * override the previous function.
    */
   onMount: (mountFn: () => void) => void;
+  /**
+   * onMountPath will call the supplied function when a path is subscribed to
+   * for the first time (`usePath` / `watchPath`).
+   *
+   * The function receives the path, so a single callback can fetch whatever
+   * record was subscribed to (e.g. `$store.usePath(itemId)`).
+   *
+   * Exact path match only — each path has its own 0 -> 1 / 1 -> 0 lifecycle.
+   * Whole-state subscribers (`useState` / `watchState`) do not trigger it.
+   *
+   * If the mountFn returns a function, that function will be called when the
+   * last subscriber to that path is unmounted.
+   *
+   * Only one onMountPath function is kept, so calling onMountPath multiple
+   * times will override the previous function.
+   */
+  onMountPath: (mountFn: (path: PathOf<T>) => void) => void;
 
   /* --- internal fns, do not call directly, exported for testing --- */
 
@@ -29,7 +46,7 @@ export interface WatcherStore<T extends Record<string, any>>
    * manually add a subscriber to the store.
    *
    * if you pass opts { skipMountTracking: true }, then this subscriber will not
-   * trigger the onMount fn.
+   * trigger the onMount or onMountPath fn.
    */
   __addSubscriber__: (
     fn: Function,
@@ -47,7 +64,7 @@ export interface WatcherStore<T extends Record<string, any>>
  * methods inside React components.
  *
  * @param defaultValue - The initial state object
- * @returns A WatcherStore with all WatcherMap methods plus onMount lifecycle
+ * @returns A WatcherStore with all WatcherMap methods plus onMount / onMountPath lifecycle
  *
  * @example
  * // store.ts
@@ -69,6 +86,12 @@ export const watcherStore = <T extends Record<string, any>>(
   let batchedUpdates: { value: T; paths: string[] }[] | null = null;
   let onMountFn: (() => void) | null = null;
   let onUnmountFn: any | null = null;
+  let onMountPathFn: ((path: string) => void) | null = null;
+  const onUnmountPathFns = new Map<string, () => void>();
+
+  const trackedPathSubscriberCount = (path: string) =>
+    subscribers.filter(s => !s.opts?.skipMountTracking && s.path === path)
+      .length;
 
   // --- helper fns ---
 
@@ -90,6 +113,16 @@ export const watcherStore = <T extends Record<string, any>>(
       }
     }
 
+    if (path && !opts?.skipMountTracking) {
+      const isFirstPathSubscriber = trackedPathSubscriberCount(path) === 0;
+      if (isFirstPathSubscriber && typeof onMountPathFn === 'function') {
+        const returnValue = onMountPathFn(path);
+        if (typeof returnValue === 'function') {
+          onUnmountPathFns.set(path, returnValue);
+        }
+      }
+    }
+
     if (!subscribers.some(sub => sub.fn === fn)) {
       subscribers.push({ path, fn, opts });
     }
@@ -98,6 +131,17 @@ export const watcherStore = <T extends Record<string, any>>(
   const removeSubscriber = (fn: Function) => {
     const removedSubscriber = subscribers.find(sub => sub.fn === fn);
     subscribers = subscribers.filter(sub => sub.fn !== fn);
+
+    const removedPath = removedSubscriber?.path;
+    if (removedPath && !removedSubscriber?.opts?.skipMountTracking) {
+      const isLastPathSubscriber =
+        trackedPathSubscriberCount(removedPath) === 0;
+      const onUnmountPathFn = onUnmountPathFns.get(removedPath);
+      if (isLastPathSubscriber && typeof onUnmountPathFn === 'function') {
+        onUnmountPathFn();
+        onUnmountPathFns.delete(removedPath);
+      }
+    }
 
     const isLastSubscriber =
       subscribers.filter(s => !s.opts?.skipMountTracking).length === 0;
@@ -243,6 +287,10 @@ export const watcherStore = <T extends Record<string, any>>(
     onMountFn = fn;
   };
 
+  const onMountPath = (fn: (path: PathOf<T>) => void) => {
+    onMountPathFn = fn as (path: string) => void;
+  };
+
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
 
   const usePath = (path: string) =>
@@ -254,6 +302,7 @@ export const watcherStore = <T extends Record<string, any>>(
     getPath,
     getState,
     onMount,
+    onMountPath,
     setPath,
     setState,
     useState,

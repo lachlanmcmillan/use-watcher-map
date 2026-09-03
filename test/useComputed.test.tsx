@@ -92,6 +92,24 @@ describe('useComputed', () => {
     expect(onMountFn).not.toHaveBeenCalled();
   });
 
+  test('does not call dependency store onMountPath when subscribing internally', () => {
+    const store = watcherStore({ count: 2, label: 'two' });
+    const onMountPathFn = mock(() => {});
+
+    store.onMountPath(onMountPathFn);
+
+    renderHook(() => {
+      const computed = useComputed(
+        { watcher: store, path: 'count' },
+        (count: number) => ({ doubled: count * 2 })
+      );
+
+      return computed.useState();
+    });
+
+    expect(onMountPathFn).not.toHaveBeenCalled();
+  });
+
   test('rerender usePath subscribers when a computed path changes', () => {
     const store = watcherStore({ count: 2 });
 

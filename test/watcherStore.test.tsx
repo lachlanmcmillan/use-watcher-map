@@ -829,4 +829,408 @@ describe('watcherStore', () => {
       expect(secondOnUnmount).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('onMountPath', () => {
+    test('call onMountPath when first subscriber for a path is added', () => {
+      const store = watcherStore(initialState);
+      const onMountPathFn = mock(() => {});
+
+      store.onMountPath(onMountPathFn);
+
+      expect(onMountPathFn).not.toHaveBeenCalled();
+
+      const mockSubscriber = mock(() => {});
+      store.__addSubscriber__(mockSubscriber, 'filter');
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onMountPathFn).toHaveBeenCalledWith('filter');
+
+      const mockSubscriber2 = mock(() => {});
+      store.__addSubscriber__(mockSubscriber2, 'filter');
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('call onMountPath for each distinct path', () => {
+      const store = watcherStore(initialState);
+      const onMountPathFn = mock(() => {});
+
+      store.onMountPath(onMountPathFn);
+
+      store.__addSubscriber__(
+        mock(() => {}),
+        'filter'
+      );
+      store.__addSubscriber__(
+        mock(() => {}),
+        'nextId'
+      );
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(2);
+      expect(onMountPathFn).toHaveBeenCalledWith('filter');
+      expect(onMountPathFn).toHaveBeenCalledWith('nextId');
+    });
+
+    test('does not call onMountPath for whole-state subscribers', () => {
+      const store = watcherStore(initialState);
+      const onMountPathFn = mock(() => {});
+
+      store.onMountPath(onMountPathFn);
+
+      const mockSubscriber = mock(() => {});
+      store.__addSubscriber__(mockSubscriber);
+
+      expect(onMountPathFn).not.toHaveBeenCalled();
+    });
+
+    test('parent and child paths each fire onMountPath independently', () => {
+      const store = watcherStore(initialState);
+      const onMountPathFn = mock(() => {});
+
+      store.onMountPath(onMountPathFn);
+
+      store.__addSubscriber__(
+        mock(() => {}),
+        'todos'
+      );
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onMountPathFn).toHaveBeenCalledWith('todos');
+
+      store.__addSubscriber__(
+        mock(() => {}),
+        'todos.0.completed'
+      );
+      expect(onMountPathFn).toHaveBeenCalledTimes(2);
+      expect(onMountPathFn).toHaveBeenCalledWith('todos.0.completed');
+    });
+
+    test('independent paths mount and unmount separately', () => {
+      const store = watcherStore(initialState);
+      const aborts = new Map<string, ReturnType<typeof mock>>();
+      const onMountPathFn = mock((path: string) => {
+        const abort = mock(() => {});
+        aborts.set(path, abort);
+        return abort;
+      });
+
+      store.onMountPath(onMountPathFn);
+
+      const filterSubscriber = mock(() => {});
+      const nextIdSubscriber = mock(() => {});
+      store.__addSubscriber__(filterSubscriber, 'filter');
+      store.__addSubscriber__(nextIdSubscriber, 'nextId');
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(2);
+
+      store.__removeSubscriber__(filterSubscriber);
+      expect(aborts.get('filter')).toHaveBeenCalledTimes(1);
+      expect(aborts.get('nextId')).not.toHaveBeenCalled();
+
+      store.__removeSubscriber__(nextIdSubscriber);
+      expect(aborts.get('nextId')).toHaveBeenCalledTimes(1);
+    });
+
+    test('call path unmount when last subscriber for that path is removed', () => {
+      const store = watcherStore(initialState);
+      const onUnmountPathFn = mock(() => {});
+      const onMountPathFn = mock(() => onUnmountPathFn);
+
+      store.onMountPath(onMountPathFn);
+
+      const mockSubscriber1 = mock(() => {});
+      const mockSubscriber2 = mock(() => {});
+      store.__addSubscriber__(mockSubscriber1, 'filter');
+      store.__addSubscriber__(mockSubscriber2, 'filter');
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountPathFn).not.toHaveBeenCalled();
+
+      store.__removeSubscriber__(mockSubscriber1);
+      expect(onUnmountPathFn).not.toHaveBeenCalled();
+
+      store.__removeSubscriber__(mockSubscriber2);
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('onMountPath that does not return a function should not set path unmount', () => {
+      const store = watcherStore(initialState);
+      const onMountPathFn = mock(() => {});
+
+      store.onMountPath(onMountPathFn);
+
+      const mockSubscriber = mock(() => {});
+      store.__addSubscriber__(mockSubscriber, 'filter');
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+
+      store.__removeSubscriber__(mockSubscriber);
+    });
+
+    test('onMountPath mount and unmount cycle works multiple times', () => {
+      const store = watcherStore(initialState);
+      const onUnmountPathFn = mock(() => {});
+      const onMountPathFn = mock(() => onUnmountPathFn);
+
+      store.onMountPath(onMountPathFn);
+
+      const mockSubscriber1 = mock(() => {});
+      store.__addSubscriber__(mockSubscriber1, 'filter');
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+
+      store.__removeSubscriber__(mockSubscriber1);
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+
+      const mockSubscriber2 = mock(() => {});
+      store.__addSubscriber__(mockSubscriber2, 'filter');
+      expect(onMountPathFn).toHaveBeenCalledTimes(2);
+
+      store.__removeSubscriber__(mockSubscriber2);
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(2);
+    });
+
+    test('skipMountTracking subscriber does not call onMountPath', () => {
+      const store = watcherStore(initialState);
+      const onMountPathFn = mock(() => {});
+
+      store.onMountPath(onMountPathFn);
+
+      const mockSubscriber = mock(() => {});
+      store.__addSubscriber__(mockSubscriber, 'filter', {
+        skipMountTracking: true,
+      });
+
+      expect(onMountPathFn).not.toHaveBeenCalled();
+    });
+
+    test('tracked subscriber calls onMountPath after skipMountTracking subscriber', () => {
+      const store = watcherStore(initialState);
+      const onMountPathFn = mock(() => {});
+
+      store.onMountPath(onMountPathFn);
+
+      const skippedSubscriber = mock(() => {});
+      store.__addSubscriber__(skippedSubscriber, 'filter', {
+        skipMountTracking: true,
+      });
+      expect(onMountPathFn).not.toHaveBeenCalled();
+
+      const trackedSubscriber = mock(() => {});
+      store.__addSubscriber__(trackedSubscriber, 'filter');
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('skipMountTracking subscriber does not keep path mounted', () => {
+      const store = watcherStore(initialState);
+      const onUnmountPathFn = mock(() => {});
+      const onMountPathFn = mock(() => onUnmountPathFn);
+
+      store.onMountPath(onMountPathFn);
+
+      const trackedSubscriber = mock(() => {});
+      const skippedSubscriber = mock(() => {});
+      store.__addSubscriber__(trackedSubscriber, 'filter');
+      store.__addSubscriber__(skippedSubscriber, 'filter', {
+        skipMountTracking: true,
+      });
+
+      store.__removeSubscriber__(trackedSubscriber);
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('removing skipMountTracking subscriber does not call stale path unmount', () => {
+      const store = watcherStore(initialState);
+      const onUnmountPathFn = mock(() => {});
+      const onMountPathFn = mock(() => onUnmountPathFn);
+
+      store.onMountPath(onMountPathFn);
+
+      const trackedSubscriber = mock(() => {});
+      store.__addSubscriber__(trackedSubscriber, 'filter');
+      store.__removeSubscriber__(trackedSubscriber);
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+
+      const skippedSubscriber = mock(() => {});
+      store.__addSubscriber__(skippedSubscriber, 'filter', {
+        skipMountTracking: true,
+      });
+      store.__removeSubscriber__(skippedSubscriber);
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('onMountPath not called if path already has subscribers', () => {
+      const store = watcherStore(initialState);
+
+      const existingSubscriber = mock(() => {});
+      store.__addSubscriber__(existingSubscriber, 'filter');
+
+      const onMountPathFn = mock(() => {});
+      store.onMountPath(onMountPathFn);
+
+      expect(onMountPathFn).not.toHaveBeenCalled();
+
+      const newSubscriber = mock(() => {});
+      store.__addSubscriber__(newSubscriber, 'filter');
+
+      expect(onMountPathFn).not.toHaveBeenCalled();
+
+      store.__removeSubscriber__(existingSubscriber);
+      store.__removeSubscriber__(newSubscriber);
+
+      const finalSubscriber = mock(() => {});
+      store.__addSubscriber__(finalSubscriber, 'filter');
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onMountPathFn).toHaveBeenCalledWith('filter');
+    });
+
+    test('usePath re-renders do not churn onMountPath unmount', () => {
+      const store = watcherStore(initialState);
+      const onUnmountPathFn = mock(() => {});
+      const onMountPathFn = mock(() => onUnmountPathFn);
+
+      store.onMountPath(onMountPathFn);
+
+      const { rerender, unmount } = renderHook(() => store.usePath('filter'));
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountPathFn).not.toHaveBeenCalled();
+
+      rerender();
+      rerender();
+      rerender();
+
+      act(() => {
+        store.setPath('filter', 'completed');
+      });
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+      expect(onUnmountPathFn).not.toHaveBeenCalled();
+
+      unmount();
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('two consumers on the same path are tracked independently', () => {
+      const store = watcherStore(initialState);
+      const onUnmountPathFn = mock(() => {});
+      const onMountPathFn = mock(() => onUnmountPathFn);
+
+      store.onMountPath(onMountPathFn);
+
+      const a = renderHook(() => store.usePath('filter'));
+      const b = renderHook(() => store.usePath('filter'));
+
+      expect(onMountPathFn).toHaveBeenCalledTimes(1);
+
+      a.unmount();
+      expect(onUnmountPathFn).not.toHaveBeenCalled();
+
+      b.unmount();
+      expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+    });
+
+    test('onMountPath return value replaces previous path unmount function', () => {
+      const store = watcherStore(initialState);
+      const firstOnUnmount = mock(() => {});
+      const secondOnUnmount = mock(() => {});
+
+      const onMountPathFn = mock(() => firstOnUnmount);
+      store.onMountPath(onMountPathFn);
+
+      const subscriber1 = mock(() => {});
+      store.__addSubscriber__(subscriber1, 'filter');
+
+      onMountPathFn.mockReturnValue(secondOnUnmount);
+
+      store.__removeSubscriber__(subscriber1);
+      expect(firstOnUnmount).toHaveBeenCalledTimes(1);
+      expect(secondOnUnmount).not.toHaveBeenCalled();
+
+      const subscriber2 = mock(() => {});
+      store.__addSubscriber__(subscriber2, 'filter');
+      store.__removeSubscriber__(subscriber2);
+
+      expect(firstOnUnmount).toHaveBeenCalledTimes(1);
+      expect(secondOnUnmount).toHaveBeenCalledTimes(1);
+    });
+
+    test('store onMount and onMountPath both fire independently', () => {
+      const store = watcherStore(initialState);
+      const storeUnmount = mock(() => {});
+      const aborts = new Map<string, ReturnType<typeof mock>>();
+      const storeMount = mock(() => storeUnmount);
+      const pathMount = mock((path: string) => {
+        const abort = mock(() => {});
+        aborts.set(path, abort);
+        return abort;
+      });
+
+      store.onMount(storeMount);
+      store.onMountPath(pathMount);
+
+      const filterSubscriber = mock(() => {});
+      store.__addSubscriber__(filterSubscriber, 'filter');
+
+      expect(storeMount).toHaveBeenCalledTimes(1);
+      expect(pathMount).toHaveBeenCalledTimes(1);
+      expect(pathMount).toHaveBeenCalledWith('filter');
+
+      const nextIdSubscriber = mock(() => {});
+      store.__addSubscriber__(nextIdSubscriber, 'nextId');
+      expect(storeMount).toHaveBeenCalledTimes(1);
+      expect(pathMount).toHaveBeenCalledTimes(2);
+      expect(pathMount).toHaveBeenCalledWith('nextId');
+
+      store.__removeSubscriber__(filterSubscriber);
+      expect(aborts.get('filter')).toHaveBeenCalledTimes(1);
+      expect(aborts.get('nextId')).not.toHaveBeenCalled();
+      expect(storeUnmount).not.toHaveBeenCalled();
+
+      store.__removeSubscriber__(nextIdSubscriber);
+      expect(aborts.get('nextId')).toHaveBeenCalledTimes(1);
+      expect(storeUnmount).toHaveBeenCalledTimes(1);
+    });
+
+    test('fetch an item when usePath first subscribes to that id', () => {
+      type ItemId = string;
+      type ItemData = Record<string, any>;
+      const store = watcherStore<Record<ItemId, ItemData>>({});
+
+      const fetchItem = mock((path: string) => ({ name: `item-${path}` }));
+      const abortItem = mock((path: string) => {});
+
+      store.onMountPath(path => {
+        const data = fetchItem(path);
+        store.setPath(path, data);
+        return () => abortItem(path);
+      });
+
+      const { result: item999, unmount: unmount999 } = renderHook(() =>
+        store.usePath('999')
+      );
+      expect(fetchItem).toHaveBeenCalledTimes(1);
+      expect(fetchItem).toHaveBeenCalledWith('999');
+      expect(item999.current).toEqual({ name: 'item-999' });
+
+      const { result: item1000, unmount: unmount1000 } = renderHook(() =>
+        store.usePath('1000')
+      );
+      expect(fetchItem).toHaveBeenCalledTimes(2);
+      expect(fetchItem).toHaveBeenCalledWith('1000');
+      expect(item1000.current).toEqual({ name: 'item-1000' });
+
+      unmount999();
+      expect(abortItem).toHaveBeenCalledTimes(1);
+      expect(abortItem).toHaveBeenCalledWith('999');
+      expect(abortItem).not.toHaveBeenCalledWith('1000');
+
+      unmount1000();
+      expect(abortItem).toHaveBeenCalledTimes(2);
+      expect(abortItem).toHaveBeenCalledWith('1000');
+    });
+  });
 });

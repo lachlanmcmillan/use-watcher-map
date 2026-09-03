@@ -21,6 +21,7 @@ v5.0.0 | React 19 peer dependency | TypeScript-first | Zero runtime dependencies
 - `watchPath(path, fn)` / `watchState(fn)` are for side-effects (useEffect-based), not rendering
 - `batch(() => { ... })` groups multiple `setPath` calls, notifies subscribers once at the end
 - `watcherStore` is created at module level (outside components); `useWatcherMap` is a hook (inside components)
+- `onMount(fn)` runs when the first component subscriber mounts; `onMountPath(fn)` runs when any path is first subscribed to (`fn` receives the path)
 - All state updates are immutable (structural sharing via `setDeepPathClone`)
 - Uses `useSyncExternalStore` internally for React integration
 

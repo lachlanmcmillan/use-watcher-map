@@ -26,13 +26,13 @@ $form.setPath('user.name', 'Ada'); // update — call from handlers, not during 
 
 ## Pick an API
 
-| Need | Create with | Where | Paths |
-| --- | --- | --- | --- |
-| Nested object, local to a tree | `useWatcherMap(initial)` | Component | yes |
-| One primitive / flag | `useWatcher(initial)` | Component | no |
-| Nested object, shared / global | `watcherStore(initial)` | Module scope | yes |
-| Derived value inside a component | `useComputed(dep, fn)` | Component | read-only |
-| Derived value from a store | `computedStore(dep, fn)` | Module scope | read-only |
+| Need                             | Create with              | Where        | Paths     |
+| -------------------------------- | ------------------------ | ------------ | --------- |
+| Nested object, local to a tree   | `useWatcherMap(initial)` | Component    | yes       |
+| One primitive / flag             | `useWatcher(initial)`    | Component    | no        |
+| Nested object, shared / global   | `watcherStore(initial)`  | Module scope | yes       |
+| Derived value inside a component | `useComputed(dep, fn)`   | Component    | read-only |
+| Derived value from a store       | `computedStore(dep, fn)` | Module scope | read-only |
 
 `useWatcherMap` / `useWatcher` / `useComputed` are hooks. `watcherStore` / `computedStore` are **not** hooks — never call them inside a component.
 
@@ -49,15 +49,15 @@ $form.setPath('user.name', 'Ada'); // update — call from handlers, not during 
 
 ## Subscribe vs read vs write
 
-| Goal | API |
-| --- | --- |
-| Render one field | `$w.usePath('user.name')` |
-| Render the whole object | `$w.useState()` — avoid except debug / small roots |
-| Read in a handler (no subscription) | `$w.getPath('user.name')` / `$w.getState()` |
-| Write one field | `$w.setPath('user.name', value)` |
-| Write several fields, one notify | `$w.batch(() => { $w.setPath(...); $w.setPath(...); })` |
-| Delete | `$w.clearPath('user.temp')` — second arg `true` also removes emptied parent objects |
-| Side-effect | `$w.watchPath('user.name', fn)` |
+| Goal                                | API                                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------------- |
+| Render one field                    | `$w.usePath('user.name')`                                                           |
+| Render the whole object             | `$w.useState()` — avoid except debug / small roots                                  |
+| Read in a handler (no subscription) | `$w.getPath('user.name')` / `$w.getState()`                                         |
+| Write one field                     | `$w.setPath('user.name', value)`                                                    |
+| Write several fields, one notify    | `$w.batch(() => { $w.setPath(...); $w.setPath(...); })`                             |
+| Delete                              | `$w.clearPath('user.temp')` — second arg `true` also removes emptied parent objects |
+| Side-effect                         | `$w.watchPath('user.name', fn)`                                                     |
 
 Paths are dot-notation: `'user.name'`, `'todos.0.completed'`. Type them with `PathOf<T>` / `TypeAtPath<T, P>` — always generic the store (`useWatcherMap<State>(...)`) so paths autocomplete.
 
@@ -113,6 +113,9 @@ import { watcherStore, computedStore } from 'use-watcher-map';
 export const $app = watcherStore<AppState>({
   theme: 'light',
   items: [],
+  home: { banner: null },
+  users: {},
+  events: { upcoming: [] },
 });
 
 export const $veg = computedStore(
@@ -125,11 +128,16 @@ $app.onMount(() => {
   return () => window.clearInterval(id);
 });
 
+$app.onMountPath(path => {
+  fetchUser(path);
+  return () => abortUserFetch(path);
+});
+
 // ThemeToggle.tsx
 const theme = $app.usePath('theme');
 ```
 
-`onMount` exists only on `WatcherStore`. It runs when the first *component* subscriber mounts (`usePath` / `useState` / `watchPath` / `watchState`), and the returned cleanup runs when the last one unmounts. Only one `onMount` callback is kept (later calls replace it). `computedStore` subscriptions do not count as store mounts.
+`onMount` and `onMountPath` exist only on `WatcherStore`. `onMount(fn)` runs when the first _component_ subscriber mounts (`usePath` / `useState` / `watchPath` / `watchState`), and the returned cleanup runs when the last one unmounts. `onMountPath(fn)` runs when any path is first subscribed to (`usePath` / `watchPath`); `fn` receives that path so you can fetch just that record (e.g. `$store.usePath(itemId)`). Each path has its own mount/unmount lifecycle. Only one callback is kept for `onMount` and one for `onMountPath` (later calls replace it). `computedStore` subscriptions do not count as mounts.
 
 ## Computed
 
@@ -154,7 +162,9 @@ Updates are skipped when the new result is **shallow-equal** to the previous (`i
 ```tsx
 const $names = useComputed({ watcher: $app, path: 'items' }, (items, prev) => {
   const next = [...new Set(items.map(i => i.name))];
-  return prev && next.length === prev.length && next.every((n, i) => n === prev[i])
+  return prev &&
+    next.length === prev.length &&
+    next.every((n, i) => n === prev[i])
     ? prev
     : next;
 });
