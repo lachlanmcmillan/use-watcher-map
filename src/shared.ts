@@ -49,12 +49,14 @@ export type Dependency =
 export const isPathSubscription = (
   dependency: Dependency
 ): dependency is PathSubscription => {
+  // check the contents, not the shape: a plain value like
+  // { watcher: 'x', path: 'y' } is not a subscription
   return (
     typeof dependency === 'object' &&
     dependency !== null &&
-    Object.keys(dependency).length === 2 &&
     'watcher' in dependency &&
-    'path' in dependency
+    isWatcherDependency((dependency as any).watcher) &&
+    typeof (dependency as any).path === 'string'
   );
 };
 

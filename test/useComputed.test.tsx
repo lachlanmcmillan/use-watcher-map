@@ -1271,4 +1271,15 @@ describe('useComputed', () => {
       'banana',
     ]);
   });
+
+  test('a plain object with watcher and path keys is a value, not a path subscription', () => {
+    // #19: only a real watcher makes { watcher, path } a subscription
+    const plain = { watcher: 'x', path: 'y' };
+    const computeFn = mock((value: unknown) => value);
+
+    const { result } = renderHook(() => useComputed(plain as any, computeFn));
+
+    expect(result.current.getState()).toBe(plain);
+    expect(computeFn).toHaveBeenCalledWith(plain, undefined);
+  });
 });
