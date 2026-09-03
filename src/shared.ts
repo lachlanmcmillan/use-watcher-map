@@ -150,6 +150,23 @@ export const getExpandedDependencies = (
 };
 
 /**
+ * Does `ancestor` contain `path`? Segments are compared whole, so a path is
+ * only inside another when every dot-separated part matches, not when the
+ * strings happen to share a prefix.
+ *
+ * @example
+ * isPathWithin('todos', 'todos')              // true  — same path
+ * isPathWithin('todos.0', 'todos')            // true  — direct child
+ * isPathWithin('todos.0.tags.1', 'todos')     // true  — deeper descendant
+ * isPathWithin('todos', 'todos.0')            // false — parent, not child
+ * isPathWithin('todos.10', 'todos.1')         // false — sibling, "1" vs "10"
+ * isPathWithin('username', 'user')            // false — sibling, "user" vs "username"
+ * isPathWithin('todos.0.done', 'todos.0.text')// false — unrelated leaves
+ */
+export const isPathWithin = (path: string, ancestor: string) =>
+  path === ancestor || path.startsWith(ancestor + '.');
+
+/**
  * each path that's being updated should be a full path, not parts
  *
  * ✅ - ["todos.0.completed"]
@@ -170,7 +187,7 @@ export const notifyPathSubscribers = <T>(
         // we notify subscribers of exact matches "todos.0.tags", and sub-paths
         // "todos.0.tags.0", "todos.0.tags.1", etc. but not siblings
         // "todos.0.completed"
-        const childPathMatch = subscriber.path.startsWith(notifyPath);
+        const childPathMatch = isPathWithin(subscriber.path, notifyPath);
 
         if (childPathMatch) {
           const pathValue = getDeepPath(value, subscriber.path.split('.'));
@@ -183,7 +200,7 @@ export const notifyPathSubscribers = <T>(
         // eg. notifyPath = "todos.0.tags"
         // we notify subscribers of exact matches "todos.0.tags", and parents
         // "todos.0", "todos"
-        const parentPathMatch = notifyPath.startsWith(subscriber.path);
+        const parentPathMatch = isPathWithin(notifyPath, subscriber.path);
 
         if (parentPathMatch) {
           const pathValue = getDeepPath(value, subscriber.path.split('.'));

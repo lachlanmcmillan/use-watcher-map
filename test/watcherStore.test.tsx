@@ -367,6 +367,43 @@ describe('watcherStore', () => {
       expect(mockFn).toHaveBeenCalledWith('update-3');
     });
 
+    test('do not notify a sibling path that merely shares a string prefix', () => {
+      const store = watcherStore({
+        user: { name: 'Ada' },
+        username: 'ada',
+        items: Array.from({ length: 11 }, (_, i) => ({ id: i })),
+      });
+      const userMock = mock(() => {});
+      const usernameMock = mock(() => {});
+      const item1Mock = mock(() => {});
+      const item10Mock = mock(() => {});
+
+      store.__addSubscriber__(userMock, 'user');
+      store.__addSubscriber__(usernameMock, 'username');
+      store.__addSubscriber__(item1Mock, 'items.1');
+      store.__addSubscriber__(item10Mock, 'items.10');
+
+      // "username" starts with "user" but is a sibling, not a child
+      store.setPath('username', 'grace');
+      expect(usernameMock).toHaveBeenCalledTimes(1);
+      expect(userMock).not.toHaveBeenCalled();
+
+      // "user.name" IS a child of "user"
+      store.setPath('user.name', 'Grace');
+      expect(userMock).toHaveBeenCalledTimes(1);
+      expect(usernameMock).toHaveBeenCalledTimes(1);
+
+      // "items.10" starts with "items.1" but is a sibling, not a child
+      store.setPath('items.10', { id: 100 });
+      expect(item10Mock).toHaveBeenCalledTimes(1);
+      expect(item1Mock).not.toHaveBeenCalled();
+
+      // and the reverse: updating "items.1" must not notify "items.10"
+      store.setPath('items.1', { id: 11 });
+      expect(item1Mock).toHaveBeenCalledTimes(1);
+      expect(item10Mock).toHaveBeenCalledTimes(1);
+    });
+
     test('call the same function subscribed to two different paths when either changes', () => {
       const store = watcherStore(initialState);
       const mockFn = mock(() => {});
