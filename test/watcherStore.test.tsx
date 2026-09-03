@@ -154,6 +154,36 @@ describe('watcherStore', () => {
    * directly to test how the functionality works.
    */
   describe('watchState', () => {
+    test('call the latest callback without churning the store lifecycle', () => {
+      const store = watcherStore(initialState);
+      const calls: string[] = [];
+      const onUnmount = mock(() => {});
+      const onMount = mock(() => onUnmount);
+      store.onMount(onMount);
+
+      const { rerender, unmount } = renderHook(
+        ({ label }: { label: string }) =>
+          store.watchState(state => calls.push(`${label}:${state.filter}`)),
+        { initialProps: { label: 'before' } }
+      );
+
+      expect(onMount).toHaveBeenCalledTimes(1);
+
+      rerender({ label: 'after' });
+
+      expect(onMount).toHaveBeenCalledTimes(1);
+      expect(onUnmount).not.toHaveBeenCalled();
+
+      act(() => {
+        store.setPath('filter', 'completed');
+      });
+
+      expect(calls).toEqual(['after:completed']);
+
+      unmount();
+      expect(onUnmount).toHaveBeenCalledTimes(1);
+    });
+
     test('call the subscriber when setState is called', () => {
       const store = watcherStore(initialState);
       const mockFn = mock(() => {});

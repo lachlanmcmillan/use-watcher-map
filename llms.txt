@@ -1,6 +1,6 @@
 # use-watcher-map
 
-> React state management with path-based subscriptions for fine-grained re-renders. TypeScript-first. React 19+. Zero dependencies.
+> React state management with path-based subscriptions for fine-grained re-renders. TypeScript-first. React 19.2.8+. Zero dependencies.
 
 ## Install
 

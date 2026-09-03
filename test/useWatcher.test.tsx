@@ -33,6 +33,26 @@ describe('useWatcher', () => {
    * directly to test how the functionality works.
    */
   describe('watchState', () => {
+    test('call the latest callback without resubscribing after a rerender', () => {
+      const calls: string[] = [];
+      const { result, rerender } = renderHook(
+        ({ label }: { label: string }) => {
+          const watcher = useWatcher(initialState);
+          watcher.watchState(value => calls.push(`${label}:${value}`));
+          return watcher;
+        },
+        { initialProps: { label: 'before' } }
+      );
+
+      rerender({ label: 'after' });
+
+      act(() => {
+        result.current.setState(10);
+      });
+
+      expect(calls).toEqual(['after:10']);
+    });
+
     test('call the subscriber when setState is called', () => {
       const { result } = renderHook(() => useWatcher(initialState));
       const mockFn = mock(() => {});

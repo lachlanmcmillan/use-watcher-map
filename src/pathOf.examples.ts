@@ -147,7 +147,8 @@ const typeExampleUndef3: TypeAtPath<MyType, 'address.street.line2'> = undefined;
 // because getDeepPath returns undefined when any parent along the way is
 // missing. `emergencyContact` is optional, so `emergencyContact.name` is
 // string | undefined even though `name` itself is required.
-const typeExampleUndef4: TypeAtPath<MyType, 'emergencyContact.name'> = undefined; // string | undefined
+const typeExampleUndef4: TypeAtPath<MyType, 'emergencyContact.name'> =
+  undefined; // string | undefined
 const typeExampleUndef5: TypeAtPath<MyType, 'emergencyContact.name'> = 'Jane'; // string | undefined
 // `spouse` is optional AND nullable. A null parent still reads as undefined.
 const typeExampleUndef6: TypeAtPath<MyType, 'spouse.name'> = undefined; // string | undefined
@@ -155,13 +156,22 @@ const typeExampleUndef7: TypeAtPath<MyType, 'spouse.age'> = undefined; // number
 
 // Reading through an optional parent must not be assignable to the bare type
 // @ts-expect-error - string | undefined is not assignable to string
-const typeExampleUndef8: string = {} as TypeAtPath<MyType, 'emergencyContact.name'>;
+const typeExampleUndef8: string = {} as TypeAtPath<
+  MyType,
+  'emergencyContact.name'
+>;
 // @ts-expect-error - number | undefined is not assignable to number
 const typeExampleUndef9: number = {} as TypeAtPath<MyType, 'spouse.age'>;
 
 // A path whose parents are all required stays narrow, no undefined added
-const typeExampleReq1: string = {} as TypeAtPath<MyType, 'address.street.line1'>; // string
-const typeExampleReq2: 'New York' | 'Los Angeles' = {} as TypeAtPath<MyType, 'address.city'>;
+const typeExampleReq1: string = {} as TypeAtPath<
+  MyType,
+  'address.street.line1'
+>; // string
+const typeExampleReq2: 'New York' | 'Los Angeles' = {} as TypeAtPath<
+  MyType,
+  'address.city'
+>;
 const typeExampleReq3: number = {} as TypeAtPath<MyType, 'sub.a.b'>; // number
 
 // SetTypeAtPath is the WRITE type used by setPath. An optional parent does not

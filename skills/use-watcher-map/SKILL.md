@@ -14,7 +14,7 @@ metadata:
 
 # use-watcher-map
 
-React state with **path-based subscriptions**. Components re-render only for the paths they subscribe to. Peer: React 19. Zero runtime deps. Import from `use-watcher-map`.
+React state with **path-based subscriptions**. Components re-render only for the paths they subscribe to. Peer: React 19.2.8+. Zero runtime deps. Import from `use-watcher-map`.
 
 Prefix watcher instances with `$` so they are not confused with values:
 

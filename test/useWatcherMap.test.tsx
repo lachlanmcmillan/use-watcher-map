@@ -164,6 +164,25 @@ describe('useWatcherMap', () => {
    * directly to test how the functionality works.
    */
   describe('watchState', () => {
+    test('call the latest callback without resubscribing after a rerender', () => {
+      const calls: string[] = [];
+      const { result, rerender } = renderHook(
+        ({ label }: { label: string }) => {
+          const watcher = useWatcherMap(initialState);
+          watcher.watchState(state => calls.push(`${label}:${state.filter}`));
+          return watcher;
+        },
+        { initialProps: { label: 'before' } }
+      );
+
+      rerender({ label: 'after' });
+      act(() => {
+        result.current.setPath('filter', 'completed');
+      });
+
+      expect(calls).toEqual(['after:completed']);
+    });
+
     test('call the subscriber when setState is called', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});

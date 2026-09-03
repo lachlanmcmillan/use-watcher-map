@@ -10,7 +10,7 @@ Control re-renders in React with ease. `use-watcher-map` uses path-based subscri
 npm install use-watcher-map
 ```
 
-Peer dependencies: `react >= 19.0.0`, `react-dom >= 19.0.0`
+Peer dependencies: `react >= 19.2.8`, `react-dom >= 19.2.8`
 
 ## Quick Start
 

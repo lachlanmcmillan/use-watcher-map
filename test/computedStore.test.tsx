@@ -8,6 +8,27 @@ describe('computedStore', () => {
     mock.restore();
   });
 
+  test('watchPath calls the latest callback after a rerender', () => {
+    const store = watcherStore({ count: 2 });
+    const computed = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+    const calls: string[] = [];
+
+    const { rerender } = renderHook(
+      ({ label }: { label: string }) =>
+        computed.watchPath('doubled', value => calls.push(`${label}:${value}`)),
+      { initialProps: { label: 'before' } }
+    );
+
+    rerender({ label: 'after' });
+    act(() => {
+      store.setPath('count', 3);
+    });
+
+    expect(calls).toEqual(['after:6']);
+  });
+
   test('does not compute or subscribe until read or mounted', () => {
     const store = watcherStore({ count: 2 });
     const computeFn = mock((state: { count: number }) => ({

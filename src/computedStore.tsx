@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useEffectEvent, useSyncExternalStore } from 'react';
 import { getDeepPath, isShallowEqual } from './object';
 import {
   getDependencyValue,
@@ -178,19 +178,25 @@ export const computedStore = <T,>(
 
   // do not call setState from within this function or it will cause
   // an infinite loop
-  const watchState = (fn: Function) =>
-    useEffect(() => {
-      addSubscriber(fn);
+  const watchState = (fn: (value: T) => void) => {
+    const onStateChange = useEffectEvent(fn);
 
-      return () => removeSubscriber(fn);
+    useEffect(() => {
+      addSubscriber(onStateChange);
+
+      return () => removeSubscriber(onStateChange);
     }, []);
+  };
 
-  const watchPath = (path: string, fn: (value: any) => void) =>
+  const watchPath = (path: string, fn: (value: any) => void) => {
+    const onPathChange = useEffectEvent(fn);
+
     useEffect(() => {
-      addSubscriber(fn, path);
+      addSubscriber(onPathChange, path);
 
-      return () => removeSubscriber(fn, path);
+      return () => removeSubscriber(onPathChange, path);
     }, [path]);
+  };
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
 

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useSyncExternalStore,
@@ -81,15 +82,15 @@ export const useWatcherPrimitive = <T extends unknown>(
 
   // do not call setState from within this function or it will cause
   // an infinite loop
-  const watchState = useCallback(
-    (fn: Function) =>
-      useEffect(() => {
-        addSubscriber(fn);
+  const watchState = (fn: (value: T) => void) => {
+    const onStateChange = useEffectEvent(fn);
 
-        return () => removeSubscriber(fn);
-      }, []),
-    []
-  );
+    useEffect(() => {
+      addSubscriber(onStateChange);
+
+      return () => removeSubscriber(onStateChange);
+    }, []);
+  };
 
   return useMemo(
     () => ({

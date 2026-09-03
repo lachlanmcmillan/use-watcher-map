@@ -57,6 +57,28 @@ describe('useComputed', () => {
     expect(subscriber).toHaveBeenCalledWith({ doubled: 6 });
   });
 
+  test('watchState calls the latest callback after a rerender', () => {
+    const store = watcherStore({ count: 2 });
+    const calls: string[] = [];
+
+    const { rerender } = renderHook(
+      ({ label }: { label: string }) => {
+        const computed = useComputed(store, state => ({
+          doubled: state.count * 2,
+        }));
+        computed.watchState(value => calls.push(`${label}:${value.doubled}`));
+      },
+      { initialProps: { label: 'before' } }
+    );
+
+    rerender({ label: 'after' });
+    act(() => {
+      store.setPath('count', 3);
+    });
+
+    expect(calls).toEqual(['after:6']);
+  });
+
   test('subscribe to a watcherStore dependency and receive whole-store updates', () => {
     const store = watcherStore({ count: 2, label: 'two' });
     const computeFn = mock((state: { count: number; label: string }) => ({

@@ -2,17 +2,18 @@ type FilteredKeys<T> = keyof T & (string | number);
 
 // "prefix.child" paths into V, or nothing if V has no properties to path into
 type ChildPaths<Prefix extends string | number, V> =
-  NonNullable<V> extends object
-    ? `${Prefix}.${PathOf<NonNullable<V>>}`
-    : never;
+  NonNullable<V> extends object ? `${Prefix}.${PathOf<NonNullable<V>>}` : never;
 
 // All nested property paths of T as dot-separated string literals
-export type PathOf<T extends Record<string, any>> = T extends readonly (infer E)[]
-  ? // arrays: indices, `length` (an own data property), and paths into each
-    // element. Not methods like `map` or `push`, which keyof would include.
-    `${number}` | 'length' | ChildPaths<number, E>
-  : // objects: each key, and paths into each key's value
-    { [Key in FilteredKeys<T>]: `${Key}` | ChildPaths<Key, T[Key]> }[FilteredKeys<T>];
+export type PathOf<T extends Record<string, any>> =
+  T extends readonly (infer E)[]
+    ? // arrays: indices, `length` (an own data property), and paths into each
+      // element. Not methods like `map` or `push`, which keyof would include.
+      `${number}` | 'length' | ChildPaths<number, E>
+    : // objects: each key, and paths into each key's value
+      {
+        [Key in FilteredKeys<T>]: `${Key}` | ChildPaths<Key, T[Key]>;
+      }[FilteredKeys<T>];
 
 /**
  * Get the type at a specified path
@@ -29,9 +30,8 @@ export type TypeAtPath<
   Path extends string,
 > = Path extends `${infer Key}.${infer Rest}`
   ? NonNullable<T[Key]> extends Record<string, any>
-    ?
-        // recurse into the parent with null/undefined stripped
-        | TypeAtPath<NonNullable<T[Key]>, Rest>
+    ? // recurse into the parent with null/undefined stripped
+      | TypeAtPath<NonNullable<T[Key]>, Rest>
         // parent may be undefined (optional) -> result may be undefined
         | (undefined extends T[Key] ? undefined : never)
         // parent may be null -> getDeepPath still returns undefined
