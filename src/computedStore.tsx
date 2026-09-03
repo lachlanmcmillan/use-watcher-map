@@ -1,4 +1,9 @@
-import { useEffect, useEffectEvent, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useSyncExternalStore,
+} from 'react';
 import { getDeepPath, isShallowEqual } from './object';
 import {
   getDependencyValue,
@@ -136,22 +141,6 @@ export const computedStore = <T,>(
     return () => removeSubscriber(fn);
   };
 
-  // useSyncExternalStore re-subscribes whenever the subscribe fn identity
-  // changes. Cache one subscribe fn per path so identity is stable across
-  // renders of the same usePath(path) call.
-  const pathSubscribers = new Map<string, (fn: Function) => () => void>();
-  const subscribePathFactory = (path: string) => {
-    let cached = pathSubscribers.get(path);
-    if (!cached) {
-      cached = (fn: Function) => {
-        addSubscriber(fn, path);
-        return () => removeSubscriber(fn, path);
-      };
-      pathSubscribers.set(path, cached);
-    }
-    return cached;
-  };
-
   const getState = () => {
     if (!unsubscribeDependency) {
       refreshState();
@@ -162,18 +151,6 @@ export const computedStore = <T,>(
 
   const getPath = (path: string): any => {
     return getDeepPath(getState(), path.split('.'));
-  };
-
-  // Cache one getSnapshot fn per path. useSyncExternalStore reads identity to
-  // detect changes; a fresh fn each render forces extra work.
-  const pathGetters = new Map<string, () => any>();
-  const getPathFactory = (path: string) => {
-    let cached = pathGetters.get(path);
-    if (!cached) {
-      cached = (): any => getPath(path);
-      pathGetters.set(path, cached);
-    }
-    return cached;
   };
 
   // do not call setState from within this function or it will cause
@@ -200,8 +177,22 @@ export const computedStore = <T,>(
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
 
-  const usePath = (path: string) =>
-    useSyncExternalStore(subscribePathFactory(path), getPathFactory(path));
+  // memoise per component so useSyncExternalStore keeps its subscription
+  // across renders of the same path, without a store-level cache that would
+  // hold every path ever used
+  const usePath = (path: string) => {
+    const subscribePath = useCallback(
+      (fn: Function) => {
+        addSubscriber(fn, path);
+        return () => removeSubscriber(fn, path);
+      },
+      [path]
+    );
+
+    const getPathSnapshot = useCallback(() => getPath(path), [path]);
+
+    return useSyncExternalStore(subscribePath, getPathSnapshot);
+  };
 
   return {
     getState,

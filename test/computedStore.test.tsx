@@ -1,4 +1,4 @@
-import { describe, test, expect, mock, beforeEach } from 'bun:test';
+import { describe, test, expect, mock, spyOn, beforeEach } from 'bun:test';
 import { renderHook, act } from '@testing-library/react';
 import { computedStore } from '../src/computedStore';
 import { watcherStore } from '../src/watcherStore';
@@ -277,5 +277,34 @@ describe('computedStore', () => {
 
     const { result } = renderHook(() => computed.useState());
     expect(result.current).toBe(plain);
+  });
+
+  test('usePath does not resubscribe on rerenders of the same path', () => {
+    // #9: usePath memoises per component instead of a store-level cache.
+    // a resubscribe would drop to zero subscribers, unsubscribe from the
+    // dependency, then subscribe to it again.
+    const store = watcherStore({ count: 2 });
+    const computed = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+    const addSubscriber = spyOn(store, '__addSubscriber__');
+
+    const { result, rerender, unmount } = renderHook(() =>
+      computed.usePath('doubled')
+    );
+
+    expect(result.current).toBe(4);
+    expect(addSubscriber).toHaveBeenCalledTimes(1);
+
+    rerender();
+    rerender();
+    act(() => {
+      store.setPath('count', 3);
+    });
+
+    expect(result.current).toBe(6);
+    expect(addSubscriber).toHaveBeenCalledTimes(1);
+
+    unmount();
   });
 });

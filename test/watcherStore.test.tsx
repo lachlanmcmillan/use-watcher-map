@@ -907,7 +907,7 @@ describe('watcherStore', () => {
       expect(onMountFn).toHaveBeenCalledTimes(1);
       expect(onUnmountFn).not.toHaveBeenCalled();
 
-      // Re-render multiple times. If subscribePathFactory returned a new fn
+      // Re-render multiple times. If usePath produced a new subscribe fn
       // each call, useSyncExternalStore would resubscribe (unsub + sub), and
       // the 1->0->1 transitions would fire onUnmount/onMount each time.
       rerender();

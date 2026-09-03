@@ -1,4 +1,9 @@
-import { useEffect, useEffectEvent, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useSyncExternalStore,
+} from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import type { WatcherBase } from './watcherBase';
 import { PathOf } from './pathOf';
@@ -210,39 +215,10 @@ export const watcherStore = <T extends Record<string, any>>(
     return () => removeSubscriber(fn);
   };
 
-  // useSyncExternalStore re-subscribes whenever the subscribe fn identity
-  // changes, which would fire onMount/onUnmount on every render. Cache one
-  // subscribe fn per path so identity is stable across renders of the same
-  // usePath(path) call.
-  const pathSubscribers = new Map<string, (fn: Function) => () => void>();
-  const subscribePathFactory = (path: string) => {
-    let cached = pathSubscribers.get(path);
-    if (!cached) {
-      cached = (fn: Function) => {
-        addSubscriber(fn, path);
-        return () => removeSubscriber(fn, path);
-      };
-      pathSubscribers.set(path, cached);
-    }
-    return cached;
-  };
-
   const getState = () => state;
 
   const getPath = (path: string): any => {
     return getDeepPath(state, path.split('.'));
-  };
-
-  // Cache one getSnapshot fn per path. useSyncExternalStore reads identity to
-  // detect changes; a fresh fn each render forces extra work.
-  const pathGetters = new Map<string, () => any>();
-  const getPathFactory = (path: string) => {
-    let cached = pathGetters.get(path);
-    if (!cached) {
-      cached = (): any => getDeepPath(state, path.split('.'));
-      pathGetters.set(path, cached);
-    }
-    return cached;
   };
 
   const batch = (fn: () => void) => {
@@ -346,8 +322,22 @@ export const watcherStore = <T extends Record<string, any>>(
 
   const useState = () => useSyncExternalStore<T>(subscribe, getState);
 
-  const usePath = (path: string) =>
-    useSyncExternalStore(subscribePathFactory(path), getPathFactory(path));
+  // memoise per component so useSyncExternalStore keeps its subscription
+  // across renders of the same path (no onMount/onUnmount churn), without a
+  // store-level cache that would hold every path ever used
+  const usePath = (path: string) => {
+    const subscribePath = useCallback(
+      (fn: Function) => {
+        addSubscriber(fn, path);
+        return () => removeSubscriber(fn, path);
+      },
+      [path]
+    );
+
+    const getPathSnapshot = useCallback(() => getPath(path), [path]);
+
+    return useSyncExternalStore(subscribePath, getPathSnapshot);
+  };
 
   return {
     batch,
