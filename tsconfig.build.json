@@ -5,6 +5,7 @@
     "dist",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
+    "src/**/*.examples.ts",
     "example/**/*"
   ],
   "compilerOptions": {
