@@ -162,12 +162,17 @@ export function useComputed<T>(
     return getDeepPath(state.current, path.split('.'));
   }, []);
 
+  // store notifies call the latest computeFn, not the one captured when the
+  // effect last ran. render-time computes above still call computeFn directly
+  // since effect events cannot run during render.
+  const compute = useEffectEvent(computeFn);
+
   // Subscribe only. Do not recompute here on mount — that would double-call
   // computeFn after the render-time compute above. Later effect runs (deps
   // changed) still resubscribe; the new snapshot was already computed above.
   useEffect(() => {
     const updateComputed = () => {
-      const nextState = computeFn(
+      const nextState = compute(
         getDependencyValue(dependency),
         state.current
       );

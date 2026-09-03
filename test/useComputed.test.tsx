@@ -1282,4 +1282,28 @@ describe('useComputed', () => {
     expect(result.current.getState()).toBe(plain);
     expect(computeFn).toHaveBeenCalledWith(plain, undefined);
   });
+
+  test('a store notify uses the latest computeFn closure after a rerender', () => {
+    // #6: computeFn closes over a prop that is not a dependency. a store
+    // notify must call the current closure, not the one the effect captured
+    const store = watcherStore({ count: 2 });
+
+    const { result, rerender } = renderHook(
+      ({ multiplier }: { multiplier: number }) =>
+        useComputed(store, state => ({ value: state.count * multiplier })),
+      { initialProps: { multiplier: 1 } }
+    );
+
+    expect(result.current.getState()).toEqual({ value: 2 });
+
+    // no dependency changed, so no recompute yet (same rule as useMemo)
+    rerender({ multiplier: 10 });
+    expect(result.current.getState()).toEqual({ value: 2 });
+
+    act(() => {
+      store.setPath('count', 3);
+    });
+
+    expect(result.current.getState()).toEqual({ value: 30 });
+  });
 });
