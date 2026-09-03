@@ -215,14 +215,21 @@ export const watcherStore = <T extends Record<string, any>>(
     if (batchedPaths) {
       throw new Error('Cannot batch updates inside a batch');
     }
+    // a batch is atomic: if fn throws, restore the pre-batch state, notify
+    // nobody, and re-throw. state is immutable so keeping a reference is
+    // enough to roll back.
+    const previousState = state;
     batchedPaths = new Set();
     let paths: string[];
     try {
       fn();
-    } finally {
-      // always leave batch mode, even if fn throws, otherwise every later
-      // update is silently queued and every later batch throws
       paths = [...batchedPaths];
+    } catch (error) {
+      state = previousState;
+      throw error;
+    } finally {
+      // always leave batch mode, otherwise every later update is silently
+      // queued and every later batch throws
       batchedPaths = null;
     }
     // notify once with the final state. notifyPathSubscribers guarantees each

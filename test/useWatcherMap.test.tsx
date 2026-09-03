@@ -225,7 +225,7 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenLastCalledWith(result.current.getState());
     });
 
-    test('recover from an error thrown inside a batch', () => {
+    test('roll back all updates and notify nobody when a batch throws', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});
 
@@ -234,12 +234,18 @@ describe('useWatcherMap', () => {
       expect(() =>
         result.current.batch(() => {
           result.current.setPath('filter', 'completed');
+          result.current.setPath('nextId', 99);
           throw new Error('boom');
         })
       ).toThrow('boom');
 
+      // a batch is atomic: state is restored and no subscriber is notified
+      expect(result.current.getState()).toBe(initialState);
+      expect(mockFn).not.toHaveBeenCalled();
+
       // the store must not be stuck in batch mode
       result.current.setPath('nextId', 10);
+      expect(mockFn).toHaveBeenCalledTimes(1);
       expect(mockFn).toHaveBeenLastCalledWith(result.current.getState());
 
       // and a new batch must be allowed

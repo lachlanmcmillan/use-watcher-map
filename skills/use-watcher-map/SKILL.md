@@ -45,7 +45,7 @@ $form.setPath('user.name', 'Ada'); // update — call from handlers, not during 
 5. **`watchPath` / `watchState` are side-effects only** (they wrap `useEffect`). Do not use them to drive UI. Do not `setPath` / `setState` inside them without a stop condition — easy infinite loop. Prefer `useComputed` / `computedStore` for derived data.
 6. **Never call `__addSubscriber__`, `__removeSubscriber__`, or `__type__`.** Internal.
 7. **Initial state is initial only.** Changing the object passed to `useWatcherMap` / `watcherStore` on a later render does not update stored state. Keep a constant and reset with `setState(initial)`.
-8. **Do not nest `batch()`.** Throws.
+8. **Do not nest `batch()`.** Throws. A batch is atomic: if the callback throws, all its updates are rolled back and nobody is notified.
 
 ## Subscribe vs read vs write
 

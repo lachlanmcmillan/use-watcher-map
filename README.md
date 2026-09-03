@@ -249,6 +249,9 @@ watcher.batch(() => {
 // Subscribers notified once with both changes
 ```
 
+A batch is atomic. If the callback throws, every update made inside it is
+rolled back, no subscriber is notified, and the error is re-thrown.
+
 ### Side-effect watchers
 
 `watchPath` and `watchState` run side-effects when values change. They use `useEffect` internally for proper cleanup:

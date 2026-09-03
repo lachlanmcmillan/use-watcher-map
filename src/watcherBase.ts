@@ -11,7 +11,12 @@ export interface WatcherBase<T extends Record<string, any>> {
   setPath: <P extends PathOf<T>>(path: P, value: TypeAtPath<T, P>) => void;
   /** clear a specific path */
   clearPath: (path: PathOf<T>, removeEmptyObjects?: boolean) => void;
-  /** make multiple updates and call notifiers at the end */
+  /**
+   * make multiple updates and call notifiers once at the end.
+   *
+   * Atomic: if `fn` throws, all updates made inside it are rolled back, no
+   * subscriber is notified, and the error is re-thrown.
+   */
   batch: (fn: () => void) => void;
   /** useState will re-render the component when the state changes */
   useState: () => T;
