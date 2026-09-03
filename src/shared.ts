@@ -12,7 +12,7 @@ export type WatcherType = (typeof WatcherType)[keyof typeof WatcherType];
 
 const watcherTypes = new Set<string>(Object.values(WatcherType));
 
-export const isWatcherType = (value: unknown): value is WatcherType => {
+export const isWatcherType = (value: any): value is WatcherType => {
   return typeof value === 'string' && watcherTypes.has(value);
 };
 
@@ -24,7 +24,7 @@ type WatcherDependencyTarget = {
     opts?: { skipMountTracking?: boolean }
   ) => void;
   __removeSubscriber__: (fn: Function, path?: any) => void;
-  onMount?: unknown;
+  onMount?: any;
   __type__: WatcherType;
 };
 
@@ -152,6 +152,40 @@ export const getExpandedDependencies = (
 };
 
 /**
+ * The paths to notify after a write or delete at `pathParts`: the path
+ * itself, plus the parent's `length` if the parent is an array whose length
+ * changed. `friends.length` is a sibling of `friends.5`, so the segment
+ * matcher would not otherwise reach it.
+ *
+ * @example
+ * // friends: ['a', 'b'] -> setPath('friends.5', x)
+ * getChangedPaths(prev, next, ['friends', '5'])   // ['friends.5', 'friends.length']
+ * // friends: ['a', 'b'] -> setPath('friends.0', x)
+ * getChangedPaths(prev, next, ['friends', '0'])   // ['friends.0']
+ * // friends: ['a', 'b', 'c'] -> clearPath('friends.1')
+ * getChangedPaths(prev, next, ['friends', '1'])   // ['friends.1', 'friends.length']
+ */
+export const getChangedPaths = (
+  previous: any,
+  next: any,
+  pathParts: string[]
+): string[] => {
+  const path = pathParts.join('.');
+  const parentParts = pathParts.slice(0, -1);
+  const previousParent = getDeepPath(previous, parentParts);
+
+  if (!Array.isArray(previousParent)) {
+    return [path];
+  }
+
+  const nextParent = getDeepPath(next, parentParts);
+
+  return previousParent.length === nextParent?.length
+    ? [path]
+    : [path, [...parentParts, 'length'].join('.')];
+};
+
+/**
  * The top-level paths to notify when the whole state is replaced: every key
  * in the old state and every key in the new one. Including the old keys is
  * what lets a subscriber of a removed key learn it is now `undefined`.
@@ -164,10 +198,7 @@ export const getExpandedDependencies = (
  * getReplacedStatePaths(undefined, { a: 1 })            // ['a']
  * getReplacedStatePaths(5, 6)                           // []
  */
-export const getReplacedStatePaths = (
-  previous: unknown,
-  next: unknown
-): string[] => {
+export const getReplacedStatePaths = (previous: any, next: any): string[] => {
   const paths = new Set<string>();
   for (const key of Object.keys(Object(previous))) {
     paths.add(key);

@@ -8,6 +8,7 @@ import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import type { WatcherBase } from './watcherBase';
 import { PathOf } from './pathOf';
 import {
+  getChangedPaths,
   getReplacedStatePaths,
   notifyPathSubscribers,
   WatcherType,
@@ -272,11 +273,10 @@ export const watcherStore = <T extends Record<string, any>>(
     }
 
     const pathParts = path.split('.');
-    const newState = setDeepPathClone(state, pathParts, value);
+    const previousState = state;
+    state = setDeepPathClone(previousState, pathParts, value);
 
-    state = newState;
-
-    notifySubscribers(state, [path]);
+    notifySubscribers(state, getChangedPaths(previousState, state, pathParts));
   };
 
   const clearPath = (path: string, removeEmptyObjects = false) => {
@@ -285,9 +285,10 @@ export const watcherStore = <T extends Record<string, any>>(
     }
 
     const pathParts = path.split('.');
-    state = deleteDeepPathClone(state, pathParts, removeEmptyObjects);
+    const previousState = state;
+    state = deleteDeepPathClone(previousState, pathParts, removeEmptyObjects);
 
-    notifySubscribers(state, [path]);
+    notifySubscribers(state, getChangedPaths(previousState, state, pathParts));
   };
 
   // do not call setState from within this function or it will cause
