@@ -225,6 +225,27 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenLastCalledWith(result.current.getState());
     });
 
+    test('recover from an error thrown inside a batch', () => {
+      const { result } = renderHook(() => useWatcherMap(initialState));
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn);
+
+      expect(() =>
+        result.current.batch(() => {
+          result.current.setPath('filter', 'completed');
+          throw new Error('boom');
+        })
+      ).toThrow('boom');
+
+      // the store must not be stuck in batch mode
+      result.current.setPath('nextId', 10);
+      expect(mockFn).toHaveBeenLastCalledWith(result.current.getState());
+
+      // and a new batch must be allowed
+      expect(() => result.current.batch(() => {})).not.toThrow();
+    });
+
     test('no longer call the function after removing subscriber', () => {
       const { result } = renderHook(() => useWatcherMap(initialState));
       const mockFn = mock(() => {});

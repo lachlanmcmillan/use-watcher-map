@@ -216,9 +216,15 @@ export const watcherStore = <T extends Record<string, any>>(
       throw new Error('Cannot batch updates inside a batch');
     }
     batchedPaths = new Set();
-    fn();
-    const paths = [...batchedPaths];
-    batchedPaths = null;
+    let paths: string[];
+    try {
+      fn();
+    } finally {
+      // always leave batch mode, even if fn throws, otherwise every later
+      // update is silently queued and every later batch throws
+      paths = [...batchedPaths];
+      batchedPaths = null;
+    }
     // notify once with the final state. notifyPathSubscribers guarantees each
     // subscriber is called at most once per call, regardless of how many of
     // the paths it matches.

@@ -215,6 +215,27 @@ describe('watcherStore', () => {
       expect(mockFn).toHaveBeenLastCalledWith(store.getState());
     });
 
+    test('recover from an error thrown inside a batch', () => {
+      const store = watcherStore(initialState);
+      const mockFn = mock(() => {});
+
+      store.__addSubscriber__(mockFn);
+
+      expect(() =>
+        store.batch(() => {
+          store.setPath('filter', 'completed');
+          throw new Error('boom');
+        })
+      ).toThrow('boom');
+
+      // the store must not be stuck in batch mode
+      store.setPath('nextId', 10);
+      expect(mockFn).toHaveBeenLastCalledWith(store.getState());
+
+      // and a new batch must be allowed
+      expect(() => store.batch(() => {})).not.toThrow();
+    });
+
     test('no longer call the function after removing subscriber', () => {
       const store = watcherStore(initialState);
       const mockFn = mock(() => {});
