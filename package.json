@@ -12,7 +12,7 @@
   "version": "6.1.0",
   "scripts": {
     "build-example": "vite build",
-    "build": "bun tsc -p tsconfig.build.json",
+    "build": "rm -rf dist && bun tsc -p tsconfig.build.json",
     "compile": "tsc -b",
     "dev": "vite",
     "format": "prettier --write .",
