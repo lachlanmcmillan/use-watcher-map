@@ -30,6 +30,33 @@ describe('computedStore', () => {
     expect(computeFn).toHaveBeenCalledTimes(2);
   });
 
+  test('returns a stable reference from repeated unmounted reads when dependencies are unchanged', () => {
+    const store = watcherStore({ items: [{ type: 'veg' }, { type: 'fruit' }] });
+    // the result contains a freshly built nested array, so two calls of
+    // computeFn are never shallow-equal to each other
+    const computeFn = mock((state: { items: { type: string }[] }) => ({
+      veg: state.items.filter(i => i.type === 'veg'),
+    }));
+
+    const computed = computedStore(store, computeFn);
+
+    const first = computed.getState();
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    // nothing changed, so the same reference must come back and computeFn
+    // must not run again. useSyncExternalStore requires this of getSnapshot.
+    expect(computed.getState()).toBe(first);
+    expect(computed.getPath('veg')).toBe(first.veg);
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    // a dependency change invalidates the cache
+    store.setPath('items', [{ type: 'veg' }]);
+    const second = computed.getState();
+    expect(second).not.toBe(first);
+    expect(second.veg).toHaveLength(1);
+    expect(computeFn).toHaveBeenCalledTimes(2);
+  });
+
   test('getPath computes from current dependency values without subscribing', () => {
     const store = watcherStore({ count: 2 });
     const computeFn = mock((state: { count: number }) => ({

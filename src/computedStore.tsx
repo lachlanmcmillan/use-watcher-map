@@ -46,16 +46,27 @@ export const computedStore = <T,>(
 ): ComputedStore<T> => {
   let state: T | undefined = undefined;
   let hasState = false;
+  // the dependency values `state` was computed from
+  let lastInputs: unknown = undefined;
   let subscribers: { path?: string; fn: Function }[] = [];
   let unsubscribeDependency: (() => void) | null = null;
 
   // --- helper fns ---
 
+  /** recompute `state` if the inputs changed. returns true if it did. */
   const refreshState = () => {
-    const nextState = computeFn(
-      getDependencyValue(dependency),
-      hasState ? state : undefined
-    );
+    const inputs = getDependencyValue(dependency);
+
+    // unchanged inputs (by reference) mean an unchanged result, so skip
+    // computeFn. this keeps getState() stable across unmounted reads, which
+    // useSyncExternalStore requires of getSnapshot.
+    if (hasState && isShallowEqual(inputs, lastInputs)) {
+      return false;
+    }
+
+    const nextState = computeFn(inputs, hasState ? state : undefined);
+    lastInputs = inputs;
+
     if (hasState && isShallowEqual(state, nextState)) {
       return false;
     }
