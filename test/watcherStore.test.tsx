@@ -367,6 +367,22 @@ describe('watcherStore', () => {
       expect(mockFn).toHaveBeenCalledWith('update-3');
     });
 
+    test('notify a path subscriber when setState removes that key', () => {
+      const store = watcherStore<{ a: number; b?: number }>({ a: 1, b: 2 });
+      const mockFn = mock(() => {});
+
+      store.__addSubscriber__(mockFn, 'b');
+
+      store.setState({ a: 1, b: 3 });
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenLastCalledWith(3);
+
+      // "b" is gone from the new state, its subscriber must hear about it
+      store.setState({ a: 1 });
+      expect(mockFn).toHaveBeenCalledTimes(2);
+      expect(mockFn).toHaveBeenLastCalledWith(undefined);
+    });
+
     test('do not notify a sibling path that merely shares a string prefix', () => {
       const store = watcherStore({
         user: { name: 'Ada' },

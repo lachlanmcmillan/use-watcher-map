@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, isShallowEqual } from './object';
 import {
   getDependencyValue,
+  getReplacedStatePaths,
   notifyPathSubscribers,
   subscribeToDependency,
   WatcherType,
@@ -65,11 +66,18 @@ export const computedStore = <T,>(
   };
 
   const updateComputed = () => {
+    const previousState = state;
     if (!refreshState()) {
       return;
     }
 
-    notifyPathSubscribers(subscribers, state as T, Object.keys(Object(state)));
+    // notify every top-level key in either the old or the new result, so a
+    // subscriber of a key that was dropped sees `undefined`
+    notifyPathSubscribers(
+      subscribers,
+      state as T,
+      getReplacedStatePaths(previousState, state)
+    );
   };
 
   const mount = () => {

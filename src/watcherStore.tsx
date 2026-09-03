@@ -2,7 +2,11 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { getDeepPath, setDeepPathClone, deleteDeepPathClone } from './object';
 import type { WatcherBase } from './watcherBase';
 import { PathOf } from './pathOf';
-import { notifyPathSubscribers, WatcherType } from './shared';
+import {
+  getReplacedStatePaths,
+  notifyPathSubscribers,
+  WatcherType,
+} from './shared';
 
 export interface WatcherStore<T extends Record<string, any>>
   extends WatcherBase<T> {
@@ -264,13 +268,12 @@ export const watcherStore = <T extends Record<string, any>>(
    * of the changes. This will trigger all paths that are being watched.
    */
   const setState = (value: T) => {
+    const previousState = state;
     // update the state
     state = value;
-    // determine what keys have changed in the map
-    // a user can call setValue({ a: 1, b: 2 })
-    // and subscribers of both a and b will be notified
-    const paths = Object.keys(value);
-    // notify subscribers of the changes
+    // notify subscribers of every top-level key in either the old or the new
+    // state, so a subscriber of a key that was removed sees `undefined`
+    const paths = getReplacedStatePaths(previousState, value);
     notifySubscribers(value, paths);
   };
 

@@ -379,6 +379,24 @@ describe('useWatcherMap', () => {
       expect(mockFn).toHaveBeenCalledWith('update-3');
     });
 
+    test('notify a path subscriber when setState removes that key', () => {
+      const { result } = renderHook(() =>
+        useWatcherMap<{ a: number; b?: number }>({ a: 1, b: 2 })
+      );
+      const mockFn = mock(() => {});
+
+      result.current.__addSubscriber__(mockFn, 'b');
+
+      result.current.setState({ a: 1, b: 3 });
+      expect(mockFn).toHaveBeenCalledTimes(1);
+      expect(mockFn).toHaveBeenLastCalledWith(3);
+
+      // "b" is gone from the new state, its subscriber must hear about it
+      result.current.setState({ a: 1 });
+      expect(mockFn).toHaveBeenCalledTimes(2);
+      expect(mockFn).toHaveBeenLastCalledWith(undefined);
+    });
+
     test('do not notify a sibling path that merely shares a string prefix', () => {
       const { result } = renderHook(() =>
         useWatcherMap({

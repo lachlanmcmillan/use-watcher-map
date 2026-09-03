@@ -9,6 +9,7 @@ import { getDeepPath, isShallowEqual } from './object';
 import {
   getDependencyValue,
   getExpandedDependencies,
+  getReplacedStatePaths,
   notifyPathSubscribers,
   subscribeToDependency,
   WatcherType,
@@ -88,7 +89,8 @@ export function useComputed<T>(
   // a new array (or path-subscription wrapper) with the same contents is a no-op.
   const computedForDeps = useRef<Dependency[] | null>(null);
   // Render-time computes cannot notify subscribers. Flush this in the effect.
-  const pendingNotify = useRef(false);
+  // Holds the paths to notify (old + new top-level keys), or null if none.
+  const pendingNotifyPaths = useRef<string[] | null>(null);
   const subscribers = useRef<{ path?: string; fn: Function }[]>([]);
 
   // Expand once per render and reuse as the effect deps. Path subscriptions
@@ -109,12 +111,16 @@ export function useComputed<T>(
       isFirst ? undefined : state.current
     );
     if (isFirst || !isShallowEqual(state.current, nextState)) {
-      state.current = nextState;
       // Child subscribers (useState/usePath in other components) would otherwise
       // miss primitive / watcher-identity updates that don't come from a store notify.
+      // Capture the old keys now, before they are lost, so dropped keys notify.
       if (!isFirst) {
-        pendingNotify.current = true;
+        pendingNotifyPaths.current = getReplacedStatePaths(
+          state.current,
+          nextState
+        );
       }
+      state.current = nextState;
     }
     computedForDeps.current = expandedDeps;
   }
@@ -168,8 +174,11 @@ export function useComputed<T>(
         return;
       }
 
+      // notify every top-level key in either the old or the new result, so a
+      // subscriber of a key that was dropped sees `undefined`
+      const paths = getReplacedStatePaths(state.current, nextState);
       state.current = nextState;
-      notifySubscribers(nextState, Object.keys(Object(state.current)));
+      notifySubscribers(nextState, paths);
     };
 
     const unsubscribe = subscribeToDependency(dependency, updateComputed);
@@ -181,11 +190,12 @@ export function useComputed<T>(
     // out (snapshot already matches) while children that did not re-render still
     // get the push.
     let cancelled = false;
-    if (pendingNotify.current) {
-      pendingNotify.current = false;
+    const pendingPaths = pendingNotifyPaths.current;
+    if (pendingPaths) {
+      pendingNotifyPaths.current = null;
       queueMicrotask(() => {
         if (!cancelled) {
-          notifySubscribers(state.current, Object.keys(Object(state.current)));
+          notifySubscribers(state.current, pendingPaths);
         }
       });
     }

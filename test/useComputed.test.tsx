@@ -130,6 +130,29 @@ describe('useComputed', () => {
     expect(result.current).toBe(10);
   });
 
+  test('rerender a usePath subscriber when the computed result drops that key', () => {
+    const store = watcherStore({ showTotal: true, amount: 5 });
+
+    const { result } = renderHook(() => {
+      const computed = useComputed(store, state =>
+        state.showTotal
+          ? { amount: state.amount, total: state.amount * 2 }
+          : { amount: state.amount }
+      );
+
+      return computed.usePath('total');
+    });
+
+    expect(result.current).toBe(10);
+
+    // "total" is gone from the computed result, the subscriber must see undefined
+    act(() => {
+      store.setPath('showTotal', false);
+    });
+
+    expect(result.current).toBeUndefined();
+  });
+
   test('subscribe to a dependency path and ignore unrelated path changes', () => {
     const store = watcherStore({
       user: { firstName: 'Ada', lastName: 'Lovelace' },

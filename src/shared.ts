@@ -150,6 +150,33 @@ export const getExpandedDependencies = (
 };
 
 /**
+ * The top-level paths to notify when the whole state is replaced: every key
+ * in the old state and every key in the new one. Including the old keys is
+ * what lets a subscriber of a removed key learn it is now `undefined`.
+ *
+ * Non-object states (primitives, null, undefined) contribute no keys.
+ *
+ * @example
+ * getReplacedStatePaths({ a: 1, b: 2 }, { a: 1 })       // ['a', 'b']
+ * getReplacedStatePaths({ a: 1 }, { a: 1, c: 3 })       // ['a', 'c']
+ * getReplacedStatePaths(undefined, { a: 1 })            // ['a']
+ * getReplacedStatePaths(5, 6)                           // []
+ */
+export const getReplacedStatePaths = (
+  previous: unknown,
+  next: unknown
+): string[] => {
+  const paths = new Set<string>();
+  for (const key of Object.keys(Object(previous))) {
+    paths.add(key);
+  }
+  for (const key of Object.keys(Object(next))) {
+    paths.add(key);
+  }
+  return [...paths];
+};
+
+/**
  * Does `ancestor` contain `path`? Segments are compared whole, so a path is
  * only inside another when every dot-separated part matches, not when the
  * strings happen to share a prefix.
