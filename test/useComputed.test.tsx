@@ -97,13 +97,71 @@ describe('useComputed', () => {
     expect(computeFn).toHaveBeenCalledTimes(2);
   });
 
-  test('does not call dependency store onMount when subscribing internally', () => {
+  for (const dependencyType of ['whole-store', 'path'] as const) {
+    for (const refreshType of ['synchronous', 'asynchronous'] as const) {
+      test(`refreshes stale cached data through useComputed alone (${dependencyType}, ${refreshType})`, async () => {
+        const staleData = [{ id: 'truck-1', location: 'cached depot' }];
+        const freshData = [{ id: 'truck-1', location: 'current depot' }];
+        const store = watcherStore({
+          data: staleData,
+          status: 'Done',
+          lastUpdate: null as number | null,
+        });
+        const onUnmount = mock(() => {});
+        const onMount = mock(() => {
+          if (store.getState().lastUpdate === null) {
+            const refresh = () =>
+              store.setState({
+                data: freshData,
+                status: 'Done',
+                lastUpdate: 1,
+              });
+            if (refreshType === 'asynchronous') {
+              queueMicrotask(refresh);
+            } else {
+              refresh();
+            }
+          }
+          return onUnmount;
+        });
+        store.onMount(onMount);
+
+        const Locations = () => {
+          const dependency =
+            dependencyType === 'whole-store'
+              ? store
+              : { watcher: store, path: 'data' };
+          const computed = useComputed(dependency, value =>
+            dependencyType === 'whole-store' ? value.data : value
+          );
+          const locations = computed.useState();
+          return <output>{locations[0].location}</output>;
+        };
+
+        expect(store.getState().data).toEqual(staleData);
+        const view = render(<Locations />);
+        await act(async () => {});
+
+        // No direct store subscription, rerender, or navigation can refresh this view.
+        expect(view.getByRole('status').textContent).toBe('current depot');
+        expect(onMount).toHaveBeenCalledTimes(1);
+        expect(store.getState().lastUpdate).toBe(1);
+        expect(onUnmount).not.toHaveBeenCalled();
+
+        view.unmount();
+        expect(onUnmount).toHaveBeenCalledTimes(1);
+      });
+    }
+  }
+
+  test('mounts and unmounts a watcherStore dependency with the hook', () => {
     const store = watcherStore({ count: 2 });
-    const onMountFn = mock(() => {});
+    const onUnmountFn = mock(() => {});
+    const onMountFn = mock(() => onUnmountFn);
 
     store.onMount(onMountFn);
 
-    renderHook(() => {
+    const { unmount } = renderHook(() => {
       const computed = useComputed(store, state => ({
         doubled: state.count * 2,
       }));
@@ -111,16 +169,28 @@ describe('useComputed', () => {
       return computed.useState();
     });
 
-    expect(onMountFn).not.toHaveBeenCalled();
+    expect(onMountFn).toHaveBeenCalledTimes(1);
+    expect(onUnmountFn).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(onUnmountFn).toHaveBeenCalledTimes(1);
   });
 
-  test('does not call dependency store onMountPath when subscribing internally', () => {
+  test('mounts and unmounts a watcherStore path dependency with the hook', () => {
     const store = watcherStore({ count: 2, label: 'two' });
-    const onMountPathFn = mock(() => {});
+    const onUnmountFn = mock(() => {});
+    const onMountFn = mock(() => onUnmountFn);
+    const onUnmountPathFn = mock(() => {});
+    const onMountPathFn = mock(() => {
+      store.setPath('count', 3);
+      return onUnmountPathFn;
+    });
 
+    store.onMount(onMountFn);
     store.onMountPath(onMountPathFn);
 
-    renderHook(() => {
+    const { result, unmount } = renderHook(() => {
       const computed = useComputed(
         { watcher: store, path: 'count' },
         (count: number) => ({ doubled: count * 2 })
@@ -129,7 +199,36 @@ describe('useComputed', () => {
       return computed.useState();
     });
 
-    expect(onMountPathFn).not.toHaveBeenCalled();
+    expect(onMountFn).toHaveBeenCalledTimes(1);
+    expect(onMountPathFn).toHaveBeenCalledTimes(1);
+    expect(onMountPathFn).toHaveBeenCalledWith('count');
+    expect(result.current).toEqual({ doubled: 6 });
+
+    unmount();
+
+    expect(onUnmountPathFn).toHaveBeenCalledTimes(1);
+    expect(onUnmountFn).toHaveBeenCalledTimes(1);
+  });
+
+  test('shares dependency lifecycle with a direct subscriber', () => {
+    const store = watcherStore({ count: 2 });
+    const onUnmountFn = mock(() => {});
+    const onMountFn = mock(() => onUnmountFn);
+    const directSubscriber = mock(() => {});
+    store.onMount(onMountFn);
+
+    const { unmount } = renderHook(() =>
+      useComputed(store, state => ({ doubled: state.count * 2 }))
+    );
+    store.__addSubscriber__(directSubscriber);
+
+    expect(onMountFn).toHaveBeenCalledTimes(1);
+
+    unmount();
+    expect(onUnmountFn).not.toHaveBeenCalled();
+
+    store.__removeSubscriber__(directSubscriber);
+    expect(onUnmountFn).toHaveBeenCalledTimes(1);
   });
 
   test('rerender usePath subscribers when a computed path changes', () => {
@@ -976,16 +1075,18 @@ describe('useComputed', () => {
     expect(computed.getState()).toEqual({ sum: 13 });
   });
 
-  test('does not call onMount for any watcherStore in the dependency array', () => {
+  test('mounts and unmounts every watcherStore in the dependency array', () => {
     const storeA = watcherStore({ count: 2 });
     const storeB = watcherStore({ count: 3 });
-    const onMountA = mock(() => {});
-    const onMountB = mock(() => {});
+    const onUnmountA = mock(() => {});
+    const onUnmountB = mock(() => {});
+    const onMountA = mock(() => onUnmountA);
+    const onMountB = mock(() => onUnmountB);
 
     storeA.onMount(onMountA);
     storeB.onMount(onMountB);
 
-    renderHook(() => {
+    const { unmount } = renderHook(() => {
       const computed = useComputed(
         [storeA, storeB],
         ([a, b]: [{ count: number }, { count: number }]) => ({
@@ -996,8 +1097,13 @@ describe('useComputed', () => {
       return computed.useState();
     });
 
-    expect(onMountA).not.toHaveBeenCalled();
-    expect(onMountB).not.toHaveBeenCalled();
+    expect(onMountA).toHaveBeenCalledTimes(1);
+    expect(onMountB).toHaveBeenCalledTimes(1);
+
+    unmount();
+
+    expect(onUnmountA).toHaveBeenCalledTimes(1);
+    expect(onUnmountB).toHaveBeenCalledTimes(1);
   });
 
   // --- computed-of-computed ---

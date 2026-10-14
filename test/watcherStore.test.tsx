@@ -1379,6 +1379,44 @@ describe('watcherStore', () => {
       expect(secondOnUnmount).toHaveBeenCalledTimes(1);
     });
 
+    for (const dependencyType of ['whole-store', 'path'] as const) {
+      test(`subscriber receives synchronous mount writes (${dependencyType})`, () => {
+        const store = watcherStore({ count: 2 });
+        const subscriber = mock((value: { count: number } | number) => {});
+        const onUnmount = mock(() => {});
+        const onUnmountPath = mock(() => {});
+        const onMount = mock(() => {
+          store.setPath('count', 3);
+          return onUnmount;
+        });
+        const onMountPath = mock(() => {
+          store.setPath('count', 4);
+          return onUnmountPath;
+        });
+        store.onMount(onMount);
+        store.onMountPath(onMountPath);
+
+        store.__addSubscriber__(
+          subscriber,
+          dependencyType === 'path' ? 'count' : undefined
+        );
+
+        expect(subscriber.mock.calls).toEqual(
+          dependencyType === 'path' ? [[3], [4]] : [[{ count: 3 }]]
+        );
+        expect(onMount).toHaveBeenCalledTimes(1);
+        expect(onMountPath).toHaveBeenCalledTimes(
+          dependencyType === 'path' ? 1 : 0
+        );
+
+        store.__removeSubscriber__(subscriber);
+        expect(onUnmount).toHaveBeenCalledTimes(1);
+        expect(onUnmountPath).toHaveBeenCalledTimes(
+          dependencyType === 'path' ? 1 : 0
+        );
+      });
+    }
+
     test('store onMount and onMountPath both fire independently', () => {
       const store = watcherStore(initialState);
       const storeUnmount = mock(() => {});

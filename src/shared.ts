@@ -46,6 +46,10 @@ export type Dependency =
   | null
   | undefined;
 
+type DependencySubscriptionOptions = {
+  skipMountTracking: boolean;
+};
+
 export const isPathSubscription = (
   dependency: Dependency
 ): dependency is PathSubscription => {
@@ -92,12 +96,13 @@ export const getDependencyValue = (
 
 export const subscribeToDependency = (
   dependency: Dependency | Dependency[],
-  fn: (value: any) => void
+  fn: (value: any) => void,
+  options: DependencySubscriptionOptions
 ) => {
   if (Array.isArray(dependency)) {
     let unsubscribers = [];
     for (const d of dependency) {
-      unsubscribers.push(subscribeToDependency(d, fn));
+      unsubscribers.push(subscribeToDependency(d, fn, options));
     }
     return () => {
       for (const unsubscriber of unsubscribers) {
@@ -109,7 +114,7 @@ export const subscribeToDependency = (
   if (isPathSubscription(dependency)) {
     const target = dependency.watcher;
     target.__addSubscriber__(fn, dependency.path as never, {
-      skipMountTracking: true,
+      skipMountTracking: options.skipMountTracking,
     });
     // remove only this path's subscription. the same fn may also be
     // subscribed to other paths on the same watcher.
@@ -119,7 +124,9 @@ export const subscribeToDependency = (
   if (isWatcherDependency(dependency)) {
     const target = dependency;
     if (target.__type__ === WatcherType.WatcherStore) {
-      target.__addSubscriber__(fn, undefined, { skipMountTracking: true });
+      target.__addSubscriber__(fn, undefined, {
+        skipMountTracking: options.skipMountTracking,
+      });
     } else {
       target.__addSubscriber__(fn);
     }

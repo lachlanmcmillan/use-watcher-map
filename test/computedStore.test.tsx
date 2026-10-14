@@ -51,6 +51,155 @@ describe('computedStore', () => {
     expect(computeFn).toHaveBeenCalledTimes(2);
   });
 
+  test('first subscriber triggers the dependency onMount', () => {
+    const store = watcherStore({ count: 2 });
+    const onMount = mock(() => {});
+    store.onMount(onMount);
+    const computed = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+
+    const { unmount } = renderHook(() => computed.useState());
+
+    expect(onMount).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  test('last subscriber triggers the dependency onUnmount', () => {
+    const store = watcherStore({ count: 2 });
+    const onUnmount = mock(() => {});
+    store.onMount(() => onUnmount);
+    const computed = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+
+    const { unmount } = renderHook(() => computed.useState());
+    expect(onUnmount).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(onUnmount).toHaveBeenCalledTimes(1);
+  });
+
+  test('getState alone does not mount the dependency', () => {
+    const store = watcherStore({ count: 2 });
+    const onMount = mock(() => {});
+    store.onMount(onMount);
+    const computed = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+
+    expect(computed.getState()).toEqual({ doubled: 4 });
+    expect(onMount).not.toHaveBeenCalled();
+  });
+
+  test('two subscribers mount once and unmount after the last one leaves', () => {
+    const store = watcherStore({ count: 2 });
+    const onUnmount = mock(() => {});
+    const onMount = mock(() => onUnmount);
+    store.onMount(onMount);
+    const computed = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+    const subscriberA = mock(() => {});
+    const subscriberB = mock(() => {});
+
+    computed.__addSubscriber__(subscriberA);
+    computed.__addSubscriber__(subscriberB);
+
+    expect(onMount).toHaveBeenCalledTimes(1);
+
+    computed.__removeSubscriber__(subscriberA);
+    expect(onUnmount).not.toHaveBeenCalled();
+
+    computed.__removeSubscriber__(subscriberB);
+    expect(onUnmount).toHaveBeenCalledTimes(1);
+  });
+
+  test('direct and computed subscribers share the dependency lifecycle', () => {
+    const store = watcherStore({ count: 2 });
+    const onUnmount = mock(() => {});
+    const onMount = mock(() => onUnmount);
+    store.onMount(onMount);
+    const computed = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+    const directSubscriber = mock(() => {});
+    const computedSubscriber = mock(() => {});
+
+    store.__addSubscriber__(directSubscriber);
+    computed.__addSubscriber__(computedSubscriber);
+
+    expect(onMount).toHaveBeenCalledTimes(1);
+
+    store.__removeSubscriber__(directSubscriber);
+    expect(onUnmount).not.toHaveBeenCalled();
+
+    computed.__removeSubscriber__(computedSubscriber);
+    expect(onUnmount).toHaveBeenCalledTimes(1);
+  });
+
+  test('nested computed stores propagate dependency mount, refresh, and unmount', () => {
+    const store = watcherStore({ count: 2 });
+    const onUnmount = mock(() => {});
+    const onMount = mock(() => {
+      store.setPath('count', 3);
+      return onUnmount;
+    });
+    store.onMount(onMount);
+    const doubled = computedStore(store, (state: { count: number }) => ({
+      doubled: state.count * 2,
+    }));
+    const quadrupled = computedStore(doubled, state => ({
+      quadrupled: state.doubled * 2,
+    }));
+    expect(quadrupled.getState()).toEqual({ quadrupled: 8 });
+    expect(quadrupled.getPath('quadrupled')).toBe(8);
+    expect(onMount).not.toHaveBeenCalled();
+
+    const { result, unmount } = renderHook(() => quadrupled.useState());
+    expect(onMount).toHaveBeenCalledTimes(1);
+    expect(result.current).toEqual({ quadrupled: 12 });
+
+    act(() => store.setPath('count', 4));
+    expect(result.current).toEqual({ quadrupled: 16 });
+
+    unmount();
+    expect(onUnmount).toHaveBeenCalledTimes(1);
+  });
+
+  test('tracked path dependencies keep computed values and path updates intact', () => {
+    const store = watcherStore({ count: 2, label: 'two' });
+    const onUnmount = mock(() => {});
+    const onMount = mock(() => onUnmount);
+    const onUnmountPath = mock(() => {});
+    const onMountPath = mock(() => onUnmountPath);
+    store.onMount(onMount);
+    store.onMountPath(onMountPath);
+    const computeFn = mock((count: number) => ({ doubled: count * 2 }));
+    const computed = computedStore(
+      { watcher: store, path: 'count' },
+      computeFn
+    );
+
+    const { result, unmount } = renderHook(() => computed.usePath('doubled'));
+
+    expect(result.current).toBe(4);
+    expect(onMount).toHaveBeenCalledTimes(1);
+    expect(onMountPath).toHaveBeenCalledTimes(1);
+    expect(onMountPath).toHaveBeenCalledWith('count');
+
+    act(() => store.setPath('label', 'deux'));
+    expect(computeFn).toHaveBeenCalledTimes(1);
+
+    act(() => store.setPath('count', 3));
+    expect(result.current).toBe(6);
+
+    unmount();
+    expect(onUnmountPath).toHaveBeenCalledTimes(1);
+    expect(onUnmount).toHaveBeenCalledTimes(1);
+  });
+
   test('returns a stable reference from repeated unmounted reads when dependencies are unchanged', () => {
     const store = watcherStore({ items: [{ type: 'veg' }, { type: 'fruit' }] });
     // the result contains a freshly built nested array, so two calls of
@@ -80,11 +229,18 @@ describe('computedStore', () => {
 
   test('getPath computes from current dependency values without subscribing', () => {
     const store = watcherStore({ count: 2 });
-    const computeFn = mock((state: { count: number }) => ({
-      nested: { doubled: state.count * 2 },
+    const onMount = mock(() => {});
+    const onMountPath = mock(() => {});
+    store.onMount(onMount);
+    store.onMountPath(onMountPath);
+    const computeFn = mock((count: number) => ({
+      nested: { doubled: count * 2 },
     }));
 
-    const computed = computedStore(store, computeFn);
+    const computed = computedStore(
+      { watcher: store, path: 'count' },
+      computeFn
+    );
 
     expect(computed.getPath('nested.doubled')).toBe(4);
     expect(computeFn).toHaveBeenCalledTimes(1);
@@ -93,6 +249,8 @@ describe('computedStore', () => {
     expect(computeFn).toHaveBeenCalledTimes(1);
     expect(computed.getPath('nested.doubled')).toBe(10);
     expect(computeFn).toHaveBeenCalledTimes(2);
+    expect(onMount).not.toHaveBeenCalled();
+    expect(onMountPath).not.toHaveBeenCalled();
   });
 
   test('usePath subscribes to dependencies while mounted', () => {

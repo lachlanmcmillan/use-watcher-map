@@ -167,9 +167,7 @@ export function useComputed<T>(
   // since effect events cannot run during render.
   const compute = useEffectEvent(computeFn);
 
-  // Subscribe only. Do not recompute here on mount — that would double-call
-  // computeFn after the render-time compute above. Later effect runs (deps
-  // changed) still resubscribe; the new snapshot was already computed above.
+  // Subscribe to dependency changes, including writes made by mount callbacks.
   useEffect(() => {
     const updateComputed = () => {
       const nextState = compute(getDependencyValue(dependency), state.current);
@@ -184,7 +182,9 @@ export function useComputed<T>(
       notifySubscribers(nextState, paths);
     };
 
-    const unsubscribe = subscribeToDependency(dependency, updateComputed);
+    const unsubscribe = subscribeToDependency(dependency, updateComputed, {
+      skipMountTracking: false,
+    });
 
     // Defer until after this commit's other passive effects. useSyncExternalStore
     // in *this* component updates its cached snapshot in a passive effect; if we

@@ -130,6 +130,12 @@ export const watcherStore = <T extends Record<string, any>>(
 
     const isFirstSubscriber =
       subscribers.filter(s => !s.opts?.skipMountTracking).length === 0;
+    const isFirstPathSubscriber =
+      path && trackedPathSubscriberCount(path) === 0;
+
+    // Register before mount callbacks so their writes reach this subscriber.
+    subscribers.push({ path, fn, opts });
+
     if (
       !opts?.skipMountTracking &&
       isFirstSubscriber &&
@@ -142,7 +148,6 @@ export const watcherStore = <T extends Record<string, any>>(
     }
 
     if (path && !opts?.skipMountTracking) {
-      const isFirstPathSubscriber = trackedPathSubscriberCount(path) === 0;
       if (isFirstPathSubscriber && typeof onMountPathFn === 'function') {
         const returnValue = onMountPathFn(path);
         if (typeof returnValue === 'function') {
@@ -150,8 +155,6 @@ export const watcherStore = <T extends Record<string, any>>(
         }
       }
     }
-
-    subscribers.push({ path, fn, opts });
   };
 
   /**

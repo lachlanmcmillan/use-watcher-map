@@ -102,7 +102,9 @@ export const computedStore = <T,>(
     }
 
     refreshState();
-    unsubscribeDependency = subscribeToDependency(dependency, updateComputed);
+    unsubscribeDependency = subscribeToDependency(dependency, updateComputed, {
+      skipMountTracking: false,
+    });
   };
 
   const unmount = () => {
