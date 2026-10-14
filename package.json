@@ -9,7 +9,7 @@
   "name": "use-watcher-map",
   "type": "module",
   "types": "dist/index.d.ts",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "scripts": {
     "build-example": "vite build",
     "build": "rm -rf dist && bun tsc -p tsconfig.build.json",

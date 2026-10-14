@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 7.0.1
+
+- **Fix** `useComputed` and live `computedStore` subscriptions now trigger
+  dependency `onMount` / `onMountPath` callbacks.
+
+- **Fix** subscribers receive updates made inside `onMount` / `onMountPath` callbacks.
+
 ## 7.0.0
 
 - **New** `watcherStore.onMountPath(fn)`

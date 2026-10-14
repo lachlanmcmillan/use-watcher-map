@@ -69,6 +69,8 @@ Module-level. Same methods as `WatcherMap`, plus:
 
 Hook. Read-only (`getState`, `getPath`, `useState`, `usePath`, `watchState`, `watchPath`).
 
+While mounted, watcher-store dependencies count toward their `onMount` lifecycle, and path dependencies also count toward `onMountPath`. Cleanup occurs when the hook unmounts and no other tracked subscribers remain.
+
 `computeFn(value, prev?)` — `prev` is `undefined` on the first run. Returning `prev` skips notify (ref equality).
 
 Otherwise skips when `isShallowEqual(prev, next)` is true.
@@ -86,7 +88,7 @@ Not a hook. Same read API as `WatcherComputed`.
 
 Deps: `WatcherStore` | `WatcherComputed` | another computed store | `{ watcher, path }` | array of those. **Not** `WatcherMap` or `WatcherPrimitive`.
 
-Lazy: `getState` / `getPath` compute without subscribing. `useState` / `usePath` / `watch*` subscribe only while mounted, and unsubscribe from deps when the last subscriber leaves.
+Lazy: `getState` / `getPath` compute without subscribing or mounting dependencies. `useState` / `usePath` / `watch*` subscribe only while mounted, count toward `WatcherStore` dependency lifecycle (including through nested computed stores), and unsubscribe from deps when the last subscriber leaves.
 
 ## Path types
 

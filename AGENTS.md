@@ -1,7 +1,7 @@
 # use-watcher-map
 
 React state management with path-based subscriptions for fine-grained re-renders.
-v7.0.0 | React 19.2.8+ peer dependency | TypeScript-first | Zero runtime dependencies.
+v7.0.1 | React 19.2.8+ peer dependency | TypeScript-first | Zero runtime dependencies.
 
 ## Architecture
 
@@ -21,7 +21,7 @@ v7.0.0 | React 19.2.8+ peer dependency | TypeScript-first | Zero runtime depende
 - `watchPath(path, fn)` / `watchState(fn)` are for side-effects (useEffect-based), not rendering
 - `batch(() => { ... })` groups multiple `setPath` calls, notifies subscribers once at the end
 - `watcherStore` is created at module level (outside components); `useWatcherMap` is a hook (inside components)
-- `onMount(fn)` runs when the first component subscriber mounts; `onMountPath(fn)` runs when any path is first subscribed to (`fn` receives the path)
+- `onMount(fn)` runs when the first live subscriber mounts, including `useComputed` and live `computedStore` dependencies; `onMountPath(fn)` tracks each dependency path (`fn` receives the path). Lazy `computedStore.getState()` / `getPath()` reads remain untracked.
 - All state updates are immutable (structural sharing via `setDeepPathClone`)
 - Uses `useSyncExternalStore` internally for React integration
 

@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   package: use-watcher-map
-  version: 7.0.0
+  version: 7.0.1
 ---
 
 # use-watcher-map
@@ -137,7 +137,7 @@ $app.onMountPath(path => {
 const theme = $app.usePath('theme');
 ```
 
-`onMount` and `onMountPath` exist only on `WatcherStore`. `onMount(fn)` runs when the first _component_ subscriber mounts (`usePath` / `useState` / `watchPath` / `watchState`), and the returned cleanup runs when the last one unmounts. `onMountPath(fn)` runs when any path is first subscribed to (`usePath` / `watchPath`); `fn` receives that path so you can fetch just that record (e.g. `$store.usePath(itemId)`). Each path has its own mount/unmount lifecycle. Only one callback is kept for `onMount` and one for `onMountPath` (later calls replace it). `computedStore` subscriptions do not count as mounts.
+`onMount` and `onMountPath` exist only on `WatcherStore`. `onMount(fn)` runs when the first live subscriber mounts (`usePath` / `useState` / `watchPath` / `watchState`, including subscriptions from `useComputed` and propagated by `computedStore`), and the returned cleanup runs when the last one unmounts. `onMountPath(fn)` runs when any path is first subscribed to (`usePath` / `watchPath`, including `useComputed` and live `computedStore` path dependencies); `fn` receives that path so you can fetch just that record (e.g. `$store.usePath(itemId)`). Each path has its own mount/unmount lifecycle. Only one callback is kept for `onMount` and one for `onMountPath` (later calls replace it). Lazy `computedStore.getState()` / `getPath()` reads do not count as mounts.
 
 ## Computed
 
